@@ -119,6 +119,18 @@ export default function RootLayout() {
                 }}
               />
               <Drawer.Screen
+                name="quotes/new"
+                options={{
+                  title: 'New Quote',
+                }}
+              />
+              <Drawer.Screen
+                name="quotes/[id]"
+                options={{
+                  title: 'Quote Details',
+                }}
+              />
+              <Drawer.Screen
                 name="support"
                 options={{
                   title: 'Support',

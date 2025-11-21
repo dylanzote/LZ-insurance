@@ -6,6 +6,8 @@ export interface UserProfile {
   phone?: string;
   address?: string;
   dateOfBirth?: string;
+  maritalStatus?: string;
+  gender?: string;
 }
 
 export interface ProfileFormData {

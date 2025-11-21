@@ -10,6 +10,7 @@ export interface DashboardStats {
   pendingClaims: number;
   totalCoverage: number;
   coverageBreakdown: CoverageBreakdown[];
+  recentActivity?: RecentActivity[];
 }
 
 export interface RecentActivity {

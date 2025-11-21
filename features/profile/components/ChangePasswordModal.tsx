@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { View, Modal, ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
-import { X, Eye, EyeOff } from 'lucide-react-native';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
-import { Text } from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
 import { FormInput } from '@/components/ui/FormInput';
-import { useFormValidation } from '@/hooks/useFormValidation';
+import { Text } from '@/components/ui/Text';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { changePasswordSchema, type ChangePasswordFormData } from '@/core/utils/validation';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import { useTranslation } from '@/hooks/useTranslation';
 import { profileAPI } from '@/services/api/endpoints';
+import { Eye, EyeOff, X } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
 
 interface ChangePasswordModalProps {
   visible: boolean;
@@ -23,8 +23,8 @@ const useStyles = createThemedStyles((theme) => ({
   } as const,
   modalContent: {
     backgroundColor: theme.colors.background,
-    borderTopLeftRadius: theme.radii.xl,
-    borderTopRightRadius: theme.radii.xl,
+    borderTopLeftRadius: theme.radii.lg,
+    borderTopRightRadius: theme.radii.lg,
     maxHeight: '90%',
     paddingBottom: theme.spacing.lg,
   } as const,
@@ -147,14 +147,14 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <Text variant="h3" weight="bold" style={styles.headerTitle}>
                 {t('profile.changePassword')}
               </Text>
-              <Button
-                variant="ghost"
+              <TouchableOpacity
                 onPress={handleClose}
                 style={styles.closeButton}
                 accessibilityLabel={t('common.close')}
+                activeOpacity={0.7}
               >
                 <X size={20} color={styles.headerTitle.color} />
-              </Button>
+              </TouchableOpacity>
             </View>
 
             <ScrollView

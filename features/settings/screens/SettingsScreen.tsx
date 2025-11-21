@@ -139,10 +139,19 @@ export const SettingsScreen: React.FC = () => {
   const handleLocationTrackingToggle = async (value: boolean) => {
     try {
       if (value) {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          await tripTracker.startTracking();
-          setLocationTrackingEnabled(true);
+        // Use tripTracker's requestPermissions which handles both foreground and background
+        const granted = await tripTracker.requestPermissions();
+        if (granted) {
+          const started = await tripTracker.startTracking();
+          if (started) {
+            setLocationTrackingEnabled(true);
+          } else {
+            Alert.alert(
+              t('settings.location.error'),
+              t('settings.location.errorMessage')
+            );
+            setLocationTrackingEnabled(false);
+          }
         } else {
           Alert.alert(
             t('settings.location.permissionDenied'),
@@ -154,9 +163,18 @@ export const SettingsScreen: React.FC = () => {
         await tripTracker.stopTracking();
         setLocationTrackingEnabled(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling location tracking:', error);
-      Alert.alert(t('settings.location.error'), t('settings.location.errorMessage'));
+      // Check if it's the Info.plist error
+      if (error?.message?.includes('NSLocation') || error?.message?.includes('Info.plist')) {
+        Alert.alert(
+          t('settings.location.error'),
+          'Location permission descriptions are missing. Please rebuild the app after updating app.json configuration.'
+        );
+      } else {
+        Alert.alert(t('settings.location.error'), t('settings.location.errorMessage'));
+      }
+      setLocationTrackingEnabled(false);
     }
   };
 

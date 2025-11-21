@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, Alert } from 'react-native';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/core/theme/useTheme';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Shield, X, CheckCircle } from 'lucide-react-native';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
+import { CheckCircle, Shield, X } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { Alert, Modal, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { TripMap } from './TripMap';
+import { TripData } from '../types';
 
 interface DriverValidationModalProps {
   visible: boolean;
   onValidate: () => void;
+  onReject: () => void;
   onCancel: () => void;
-  tripDate: string;
+  trip: TripData;
 }
 
 const useStyles = createThemedStyles((theme) => ({
@@ -26,7 +29,65 @@ const useStyles = createThemedStyles((theme) => ({
     borderRadius: 20,
     padding: 24,
     width: '90%',
-    maxWidth: 400,
+    maxWidth: 500,
+    maxHeight: '90%',
+  } as const,
+  scrollContent: {
+    flexGrow: 1,
+  } as const,
+  mapContainer: {
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden' as const,
+    marginBottom: 16,
+    backgroundColor: theme.colors.surface,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  } as const,
+  mapPlaceholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  } as const,
+  mapButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 8,
+  } as const,
+  mapButtonText: {
+    color: theme.colors.white,
+    fontSize: 14,
+    fontWeight: '600' as const,
+    marginLeft: 8,
+  } as const,
+  locationInfo: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    marginBottom: 12,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 8,
+  } as const,
+  locationItem: {
+    flex: 1,
+  } as const,
+  locationLabel: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  } as const,
+  locationValue: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: theme.colors.text,
   } as const,
   header: {
     flexDirection: 'row' as const,
@@ -111,6 +172,20 @@ const useStyles = createThemedStyles((theme) => ({
   button: {
     flex: 1,
   } as const,
+  rejectButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  } as const,
+  rejectButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+  } as const,
   warningText: {
     fontSize: 12,
     color: theme.colors.textSecondary,
@@ -123,8 +198,9 @@ const useStyles = createThemedStyles((theme) => ({
 export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
   visible,
   onValidate,
+  onReject,
   onCancel,
-  tripDate,
+  trip,
 }) => {
   const styles = useStyles();
   const { theme } = useTheme();
@@ -143,10 +219,30 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
     onValidate();
   };
 
+  const handleReject = () => {
+    Alert.alert(
+      t('driving.review.rejectTitle'),
+      t('driving.review.rejectMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('driving.review.rejectConfirm'),
+          style: 'destructive',
+          onPress: () => {
+            setIsConfirmed(false);
+            onReject();
+          },
+        },
+      ]
+    );
+  };
+
   const handleCancel = () => {
     setIsConfirmed(false);
     onCancel();
   };
+
+
 
   return (
     <Modal
@@ -157,7 +253,8 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
     >
       <View style={styles.modalOverlay}>
         <Card variant="elevated" style={styles.modalContent}>
-          <View style={styles.header}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.header}>
             <Text style={styles.title}>
               {t('driving.review.validateDriver')}
             </Text>
@@ -184,7 +281,7 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
               {t('driving.review.tripDate')}
             </Text>
             <Text style={styles.tripInfoValue}>
-              {new Date(tripDate).toLocaleDateString('en-US', {
+              {new Date(trip.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -194,6 +291,35 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
               })}
             </Text>
           </View>
+
+          {/* Map Section */}
+          {trip.startLocation && trip.endLocation && (
+            <View style={{ marginBottom: 16 }}>
+              <TripMap trip={trip} height={200} showControls={true} />
+            </View>
+          )}
+
+          {/* Location Info */}
+          {trip.startLocation && trip.endLocation && (
+            <View style={styles.locationInfo}>
+              <View style={styles.locationItem}>
+                <Text style={styles.locationLabel}>
+                  {t('driving.review.startLocation')}
+                </Text>
+                <Text style={styles.locationValue} numberOfLines={2}>
+                  {trip.startLocation.address || `${trip.startLocation.latitude.toFixed(4)}, ${trip.startLocation.longitude.toFixed(4)}`}
+                </Text>
+              </View>
+              <View style={styles.locationItem}>
+                <Text style={[styles.locationLabel, { textAlign: 'right' as const }]}>
+                  {t('driving.review.endLocation')}
+                </Text>
+                <Text style={[styles.locationValue, { textAlign: 'right' as const }]} numberOfLines={2}>
+                  {trip.endLocation.address || `${trip.endLocation.latitude.toFixed(4)}, ${trip.endLocation.longitude.toFixed(4)}`}
+                </Text>
+              </View>
+            </View>
+          )}
 
           <TouchableOpacity
             style={styles.checkboxContainer}
@@ -211,12 +337,15 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
           </TouchableOpacity>
 
           <View style={styles.buttonContainer}>
-            <Button
-              title={t('common.cancel')}
-              variant="outline"
-              onPress={handleCancel}
-              style={styles.button}
-            />
+            <TouchableOpacity
+              style={[styles.button, styles.rejectButton, { borderColor: theme.colors.error }]}
+              onPress={handleReject}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.rejectButtonText, { color: theme.colors.error }]}>
+                {t('driving.review.reject')}
+              </Text>
+            </TouchableOpacity>
             <Button
               title={t('driving.review.confirm')}
               onPress={handleValidate}
@@ -225,9 +354,10 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
             />
           </View>
 
-          <Text style={styles.warningText}>
-            {t('driving.review.warning')}
-          </Text>
+            <Text style={styles.warningText}>
+              {t('driving.review.warning')}
+            </Text>
+          </ScrollView>
         </Card>
       </View>
     </Modal>

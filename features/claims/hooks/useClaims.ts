@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Claim } from '../types';
 import { claimsAPI } from '@/services/api/endpoints';
+import { useEffect, useState } from 'react';
+import { Claim } from '../types';
 
 export const useClaims = () => {
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -11,7 +11,12 @@ export const useClaims = () => {
     try {
       setLoading(true);
       const response = await claimsAPI.getAll();
-      setClaims(response.data);
+      // Map API response to include required 'date' field
+      const mappedClaims = response.data.map((claim: any) => ({
+        ...claim,
+        date: claim.date || claim.createdAt || claim.incidentDate,
+      }));
+      setClaims(mappedClaims);
     } catch (err) {
       setError('Failed to fetch claims');
     } finally {

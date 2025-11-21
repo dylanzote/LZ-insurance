@@ -1,12 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Alert, Linking, Platform } from 'react-native';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/core/theme/useTheme';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Shield, MapPin, AlertCircle } from 'lucide-react-native';
+import { Card } from '@/components/ui/Card';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { tripTracker } from '@/services/location/tripTracker';
+import { AlertCircle, MapPin, Shield } from 'lucide-react-native';
+import React from 'react';
+import { Alert, AppState, Linking, Platform, Text, View } from 'react-native';
 
 interface PermissionRequestCardProps {
   onPermissionGranted?: () => void;
@@ -70,7 +70,7 @@ const useStyles = createThemedStyles((theme) => ({
   warningContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: theme.colors.warningLight,
+    backgroundColor: '#fef3c7',
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
@@ -91,6 +91,36 @@ export const PermissionRequestCard: React.FC<PermissionRequestCardProps> = ({
   const { theme } = useTheme();
   const { t } = useTranslation();
   const [isRequesting, setIsRequesting] = React.useState(false);
+
+  // Listen for app state changes (when user returns from settings)
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleAppStateChange = async (nextAppState: string) => {
+    if (nextAppState === 'active') {
+      // User returned from settings, check permissions again
+      await checkPermissionsAfterSettings();
+    }
+  };
+
+  const checkPermissionsAfterSettings = async () => {
+    try {
+      const hasPermissions = await tripTracker.hasPermissions();
+      if (hasPermissions) {
+        // Permissions granted, start tracking
+        const started = await tripTracker.startTracking();
+        if (started) {
+          onPermissionGranted?.();
+        }
+      }
+    } catch (error) {
+      console.error('Error checking permissions after settings:', error);
+    }
+  };
 
   const handleEnableTracking = async () => {
     setIsRequesting(true);

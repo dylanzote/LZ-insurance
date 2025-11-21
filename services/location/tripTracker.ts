@@ -1,6 +1,8 @@
+import { TripData } from '@/features/driving/types';
+import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import { TripData } from '@/features/driving/types';
+import { Platform } from 'react-native';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 const TRIP_STORAGE_KEY = '@trip_history';
@@ -34,15 +36,30 @@ export interface ActiveTrip {
 class TripTrackerService {
   private activeTrip: ActiveTrip | null = null;
   private isTracking = false;
-  private locationUpdateInterval: NodeJS.Timeout | null = null;
+  private locationUpdateInterval: ReturnType<typeof setInterval> | null = null;
   private lastLocation: LocationPoint | null = null;
   private lastSpeed = 0;
   private speedThreshold = 5; // Minimum speed to consider as driving (m/s)
   private tripStartSpeed = 2; // Speed to start trip (m/s)
   private tripEndSpeed = 1; // Speed to end trip (m/s)
   private tripEndDelay = 30000; // 30 seconds of low speed to end trip
-  private phoneUsageDetector: NodeJS.Timeout | null = null;
+  private phoneUsageDetector: ReturnType<typeof setInterval> | null = null;
   private phoneUsageCount = 0;
+  private locationSubscription: Location.LocationSubscription | null = null;
+  
+  // Check if running in Expo Go (background location not fully supported)
+  private isExpoGo(): boolean {
+    return Constants.appOwnership === 'expo' || Constants.executionEnvironment === 'storeClient';
+  }
+  
+  // Check if we can use background location (requires native build, not Expo Go)
+  private canUseBackgroundLocation(): boolean {
+    // Background location requires native build, not available in Expo Go on iOS
+    if (Platform.OS === 'ios' && this.isExpoGo()) {
+      return false;
+    }
+    return true;
+  }
   
   // Speed limit detection (in production, this would use geocoding API)
   // For now, using default speed limits based on road type
@@ -57,14 +74,45 @@ class TripTrackerService {
    */
   async requestPermissions(): Promise<boolean> {
     try {
+      // First request foreground permissions (required)
       const { status: foregroundStatus } = await Location.requestForegroundPermissionsAsync();
       if (foregroundStatus !== 'granted') {
+        console.warn('Foreground location permission not granted:', foregroundStatus);
         return false;
       }
 
-      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-      return backgroundStatus === 'granted';
-    } catch (error) {
+      // Then request background permissions (required for background tracking)
+      // On iOS, this will show a different permission dialog
+      try {
+        const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+        if (backgroundStatus === 'granted') {
+          return true;
+        } else if (backgroundStatus === 'denied') {
+          console.warn('Background location permission denied');
+          return false;
+        } else {
+          // On iOS, background permission might be 'undetermined' initially
+          // We can still track in foreground, but background tracking won't work
+          console.warn('Background location permission not granted:', backgroundStatus);
+          // Return true for foreground-only tracking (better than nothing)
+          return true;
+        }
+      } catch (bgError: any) {
+        // On iOS, if background permission request fails, it might be because:
+        // 1. The permission descriptions are missing (should be caught by foreground request)
+        // 2. The user denied it previously
+        // 3. The app doesn't have the right capabilities
+        console.warn('Background permission request failed:', bgError?.message || bgError);
+        // Still return true if foreground is granted (we can track in foreground)
+        return true;
+      }
+    } catch (error: any) {
+      // Check if it's the Info.plist error
+      if (error?.message?.includes('NSLocation') || error?.message?.includes('Info.plist')) {
+        console.error('iOS Location Permission Error: Missing NSLocation*UsageDescription in Info.plist');
+        console.error('Please ensure app.json has the correct iOS infoPlist configuration');
+        throw new Error('Location permission descriptions are missing. Please rebuild the app after updating app.json.');
+      }
       console.error('Error requesting permissions:', error);
       return false;
     }
@@ -72,7 +120,7 @@ class TripTrackerService {
 
   /**
    * Check if location permissions are granted
-   * Returns true only if both foreground AND background permissions are granted
+   * Returns true if foreground permission is granted (background is optional but preferred)
    */
   async hasPermissions(): Promise<boolean> {
     try {
@@ -82,20 +130,35 @@ class TripTrackerService {
         return false;
       }
 
-      // Check background permission (required for trip tracking)
-      const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
-      
-      // Background permission is required for tracking trips when app is in background
-      // On iOS, background permission might not be available, so we check if it's at least not denied
-      // On Android, we need explicit background permission
-      if (backgroundStatus === 'denied') {
+      // Check background permission (preferred but not strictly required for basic tracking)
+      try {
+        const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
+        
+        // Background permission is preferred for tracking trips when app is in background
+        // On iOS, if background permission is denied, we can still track in foreground
+        // On Android, we need explicit background permission for background tracking
+        if (backgroundStatus === 'denied') {
+          // On iOS, we can still work with foreground-only
+          // On Android, this might be a problem, but let's allow foreground tracking
+          console.warn('Background permission denied, but foreground is granted. Foreground tracking will work.');
+          return true; // Allow foreground tracking
+        }
+        
+        // If background permission is granted, we're good
+        // If it's undetermined, we'll request it when starting tracking
+        return backgroundStatus === 'granted' || foregroundStatus === 'granted';
+      } catch (bgError: any) {
+        // If background permission check fails (e.g., on iOS without proper setup),
+        // we can still use foreground permission
+        console.warn('Background permission check failed, using foreground only:', bgError?.message || bgError);
+        return foregroundStatus === 'granted';
+      }
+    } catch (error: any) {
+      // Check if it's the Info.plist error
+      if (error?.message?.includes('NSLocation') || error?.message?.includes('Info.plist')) {
+        console.error('iOS Location Permission Error: Missing NSLocation*UsageDescription in Info.plist');
         return false;
       }
-      
-      // If background permission is granted, we're good
-      // If it's undetermined, we'll request it when starting tracking
-      return backgroundStatus === 'granted';
-    } catch (error) {
       console.error('Error checking permissions:', error);
       return false;
     }
@@ -128,26 +191,80 @@ class TripTrackerService {
         return false;
       }
 
-      // Start foreground location tracking
-      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000, // Update every 5 seconds
-        distanceInterval: 10, // Update every 10 meters
-        foregroundService: {
-          notificationTitle: 'Trip Tracking Active',
-          notificationBody: 'Your trip is being tracked for driving score calculation',
+      // Check if we can use background location or need to use foreground-only
+      const canUseBackground = this.canUseBackgroundLocation();
+      
+      if (canUseBackground) {
+        // Try to start background location tracking (for native builds)
+        try {
+          await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000, // Update every 5 seconds
+            distanceInterval: 10, // Update every 10 meters
+            foregroundService: {
+              notificationTitle: 'Trip Tracking Active',
+              notificationBody: 'Your trip is being tracked for driving score calculation',
+            },
+            showsBackgroundLocationIndicator: true,
+          });
+
+          // Start monitoring location updates
+          this.startLocationMonitoring();
+          this.isTracking = true;
+          console.log('Background location tracking started successfully');
+          return true;
+        } catch (bgError: any) {
+          // If background location fails, fall back to foreground-only
+          console.warn('Background location not available, falling back to foreground tracking:', bgError?.message || bgError);
+          // Continue to foreground-only tracking below
+        }
+      }
+
+      // Fallback to foreground-only location tracking (works in Expo Go)
+      console.log('Starting foreground-only location tracking (background not available in Expo Go)');
+      const { status } = await Location.getForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        console.warn('Foreground location permission not granted');
+        return false;
+      }
+
+      // Use watchPositionAsync for foreground-only tracking
+      this.locationSubscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 5000, // Update every 5 seconds
+          distanceInterval: 10, // Update every 10 meters
         },
-        showsBackgroundLocationIndicator: true,
-      });
+        (location) => {
+          // Handle location updates
+          const point: LocationPoint = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            timestamp: Date.now(),
+            speed: location.coords.speed ? location.coords.speed * 3.6 : undefined, // Convert m/s to km/h
+            heading: location.coords.heading || undefined,
+          };
+          
+          this.processLocationUpdate(point);
+        }
+      );
 
       // Start monitoring location updates
       this.startLocationMonitoring();
       this.isTracking = true;
-      console.log('Trip tracking started successfully');
+      console.log('Foreground location tracking started successfully (works in Expo Go)');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error starting location tracking:', error);
       this.isTracking = false;
+      
+      // Provide helpful error message for Expo Go users
+      if (this.isExpoGo() && Platform.OS === 'ios') {
+        console.warn('Note: Background location tracking is not available in Expo Go on iOS. Only foreground tracking is supported.');
+        console.warn('To use background location tracking, create a development build with: npx expo run:ios');
+      }
+      
       return false;
     }
   }
@@ -161,15 +278,27 @@ class TripTrackerService {
     }
 
     try {
+      // Stop background location task if it's running
       const isTaskDefined = TaskManager.isTaskDefined(LOCATION_TASK_NAME);
       if (isTaskDefined) {
-        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+        try {
+          await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+        } catch (error) {
+          console.warn('Error stopping background location updates:', error);
+        }
+      }
+
+      // Stop foreground location subscription if it's running
+      if (this.locationSubscription) {
+        this.locationSubscription.remove();
+        this.locationSubscription = null;
       }
 
       this.stopLocationMonitoring();
       this.stopPhoneUsageDetection();
       this.endActiveTrip();
       this.isTracking = false;
+      console.log('Location tracking stopped');
     } catch (error) {
       console.error('Error stopping location tracking:', error);
     }
@@ -631,7 +760,7 @@ class TripTrackerService {
 }
 
 // Define background location task
-TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }) => {
+TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
   if (error) {
     console.error('Location task error:', error);
     return;

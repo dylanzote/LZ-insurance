@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/core/theme/useTheme';
 import { Card } from '@/components/ui/Card';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Calendar, Clock, MapPin } from 'lucide-react-native';
+import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { TripData } from '../types';
-import { AlertCircle, MapPin, Clock, TrendingDown } from 'lucide-react-native';
+import { TripMap } from './TripMap';
 
 interface TripReviewCardProps {
   trip: TripData;
@@ -48,7 +49,7 @@ const useStyles = createThemedStyles((theme) => ({
     marginLeft: 4,
   } as const,
   scoreBadge: {
-    backgroundColor: theme.colors.warningLight || '#fef3c7',
+    backgroundColor: '#fef3c7',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -112,8 +113,26 @@ export const TripReviewCard: React.FC<TripReviewCardProps> = ({
 
   const hasEvents = trip.events.speeding > 0 || trip.events.hardBraking > 0 || trip.events.rapidAcceleration > 0;
 
+  // Calculate days left for review (max 6 days)
+  const calculateDaysLeft = (): number | null => {
+    const createdAt = trip.createdAt ? new Date(trip.createdAt) : new Date(trip.date);
+    const now = new Date();
+    const daysSinceCreation = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = 6 - daysSinceCreation;
+    return daysLeft >= 0 ? daysLeft : null;
+  };
+
+  const daysLeft = calculateDaysLeft();
+
   return (
     <Card variant="elevated" style={styles.card}>
+      {/* Trip Map Preview */}
+      {trip.startLocation && trip.endLocation && (
+        <View style={{ marginBottom: 12 }}>
+          <TripMap trip={trip} height={150} showControls={false} />
+        </View>
+      )}
+
       <View style={styles.header}>
         <View style={styles.leftSection}>
           <Text style={styles.date}>
@@ -141,6 +160,19 @@ export const TripReviewCard: React.FC<TripReviewCardProps> = ({
               </Text>
             </View>
           </View>
+          {daysLeft !== null && (
+            <View style={[styles.detailItem, { marginTop: 8 }]}>
+              <Calendar color={daysLeft <= 2 ? theme.colors.error : theme.colors.warning} size={14} />
+              <Text style={[styles.detailText, { 
+                color: daysLeft <= 2 ? theme.colors.error : theme.colors.warning,
+                fontWeight: '600' as const,
+              }]}>
+                {daysLeft === 0 
+                  ? t('driving.tripsToReview.expiresToday')
+                  : t('driving.tripsToReview.daysLeft', { count: daysLeft })}
+              </Text>
+            </View>
+          )}
         </View>
         {/* Score hidden until validation - shown in review screen */}
       </View>

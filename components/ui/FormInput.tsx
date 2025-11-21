@@ -63,13 +63,13 @@ export const FormInput: React.FC<FormInputProps> = ({
         )}
       />
       
-      {error && (
+      {error && error.message && (
         <Text 
           style={[styles.error, { color: theme.colors.error }]}
           accessibilityRole="alert"
           accessibilityLiveRegion="polite"
         >
-          {error.message}
+          {String(error.message)}
         </Text>
       )}
     </View>

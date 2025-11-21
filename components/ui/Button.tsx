@@ -6,7 +6,8 @@ import {
   StyleSheet, 
   ActivityIndicator,
   ViewStyle,
-  TextStyle 
+  TextStyle,
+  View
 } from 'react-native';
 
 interface ButtonProps {
@@ -17,6 +18,7 @@ interface ButtonProps {
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle | ViewStyle[];
+  icon?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -27,6 +29,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   loading = false,
   style,
+  icon,
 }) => {
   const { theme } = useTheme();
 
@@ -138,9 +141,12 @@ export const Button: React.FC<ButtonProps> = ({
           accessibilityLabel="Loading"
         />
       ) : (
-        <Text style={[styles.text, variantStyles.text, sizeStyles.text]}>
-          {title}
-        </Text>
+        <View style={styles.content}>
+          {icon && <View style={styles.iconContainer}>{icon}</View>}
+          <Text style={[styles.text, variantStyles.text, sizeStyles.text]}>
+            {title}
+          </Text>
+        </View>
       )}
     </Pressable>
   );
@@ -149,6 +155,16 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   container: {
     borderRadius: 8,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  content: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+  },
+  iconContainer: {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },

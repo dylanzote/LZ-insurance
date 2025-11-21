@@ -24,7 +24,7 @@ export const getErrorMessage = (error: unknown): string => {
  * Extracts API error from Axios error
  */
 export const extractApiError = (error: unknown): ApiError => {
-  if (error && typeof error === 'object') {
+  if (error && typeof error === 'object' && error !== null) {
     // Check if it's already an ApiError
     if ('message' in error && 'code' in error) {
       return error as ApiError;

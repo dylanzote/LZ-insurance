@@ -17,8 +17,10 @@ import {
   Zap
 } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
 import { DriverValidationModal } from '../components/DriverValidationModal';
+import { TripMap } from '../components/TripMap';
+import { TripPerformanceDetails } from '../components/TripPerformanceDetails';
 import { TripData } from '../types';
 
 const useStyles = createThemedStyles((theme) => ({
@@ -188,9 +190,37 @@ export const TripReviewScreen: React.FC = () => {
     }
   };
 
-  const handleValidate = () => {
-    setIsValidated(true);
-    setShowValidation(false);
+  const handleValidate = async () => {
+    if (!trip) return;
+    try {
+      await tripsAPI.reviewTrip(trip.id, true);
+      setIsValidated(true);
+      setShowValidation(false);
+    } catch (error) {
+      console.error('Error validating trip:', error);
+      Alert.alert(t('common.error'), t('driving.review.validationError'));
+    }
+  };
+
+  const handleReject = async () => {
+    if (!trip) return;
+    try {
+      await tripsAPI.reviewTrip(trip.id, false);
+      setShowValidation(false);
+      Alert.alert(
+        t('driving.review.rejected'),
+        t('driving.review.rejectedMessage'),
+        [
+          {
+            text: t('common.ok'),
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error rejecting trip:', error);
+      Alert.alert(t('common.error'), t('driving.review.rejectionError'));
+    }
   };
 
   const handleCancel = () => {
@@ -248,16 +278,20 @@ export const TripReviewScreen: React.FC = () => {
     <View style={styles.container}>
       <Header title={t('driving.review.title')} showNotifications={true} />
       
-      <DriverValidationModal
-        visible={showValidation && !isValidated}
-        onValidate={handleValidate}
-        onCancel={handleCancel}
-        tripDate={trip.date}
-      />
+        <DriverValidationModal
+          visible={showValidation && !isValidated}
+          onValidate={handleValidate}
+          onReject={handleReject}
+          onCancel={handleCancel}
+          trip={trip}
+        />
 
       {isValidated && (
         <ScrollView style={styles.container}>
           <View style={styles.content}>
+            {/* Trip Map */}
+            <TripMap trip={trip} height={300} showControls={true} />
+
             {/* Trip Header */}
             <Card variant="elevated" style={styles.card}>
               <View style={styles.tripHeader}>
@@ -301,6 +335,9 @@ export const TripReviewScreen: React.FC = () => {
                 </View>
               </View>
             </Card>
+
+            {/* Trip Performance Details */}
+            <TripPerformanceDetails trip={trip} />
 
             {/* Driving Events */}
             <Card variant="elevated" style={styles.card}>

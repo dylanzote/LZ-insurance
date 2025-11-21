@@ -95,6 +95,8 @@ export const profileUpdateSchema = z.object({
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   dateOfBirth: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  gender: z.string().optional(),
 });
 
 // Change password schema

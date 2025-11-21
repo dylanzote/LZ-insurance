@@ -147,12 +147,20 @@ export const DataTrackingToggle: React.FC<DataTrackingToggleProps> = ({
         setIsEnabled(false);
         onToggle?.(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling tracking:', error);
-      Alert.alert(
-        t('location.trackingError.title'),
-        t('location.trackingError.message')
-      );
+      // Check if it's the Info.plist error
+      if (error?.message?.includes('NSLocation') || error?.message?.includes('Info.plist')) {
+        Alert.alert(
+          t('location.trackingError.title'),
+          'Location permission descriptions are missing. Please rebuild the app after updating app.json configuration.'
+        );
+      } else {
+        Alert.alert(
+          t('location.trackingError.title'),
+          t('location.trackingError.message')
+        );
+      }
     } finally {
       setIsLoading(false);
     }

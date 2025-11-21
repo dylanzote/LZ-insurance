@@ -1,4 +1,4 @@
-export type FAQCategory = 'all' | 'claims' | 'policies' | 'driving' | 'coverage' | 'billing' | 'account' | 'general';
+export type FAQCategory = 'all' | 'claims' | 'policies' | 'driving' | 'coverage' | 'billing' | 'account' | 'general' | 'quotes' | 'marketplace' | 'privacy';
 
 export interface FAQ {
   id: string;

@@ -67,7 +67,7 @@ const useStyles = createThemedStyles((theme) => ({
     fontWeight: '500' as const,
   } as const,
   coverageGrid: {
-    gap: 12,
+    gap: 16,
   } as const,
   activityList: {
     gap: 8,
@@ -87,7 +87,6 @@ const useStyles = createThemedStyles((theme) => ({
     padding: 16,
     alignItems: 'center' as const,
   } as const,
-  // New styles for additional sections
   trackingPrompt: {
     backgroundColor: theme.colors.surface,
     borderRadius: 12,
@@ -132,15 +131,6 @@ const useStyles = createThemedStyles((theme) => ({
     gap: 12,
     marginBottom: 8,
   } as const,
-  quickActionCard: {
-    width: '48%',
-    backgroundColor: theme.colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  } as const,
   actionIcon: {
     width: 40,
     height: 40,
@@ -148,12 +138,6 @@ const useStyles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
-  } as const,
-  actionTitle: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: theme.colors.text,
-    textAlign: 'center',
   } as const,
   supportGrid: {
     flexDirection: 'row' as const,
@@ -175,6 +159,108 @@ const useStyles = createThemedStyles((theme) => ({
     marginTop: 6,
     textAlign: 'center',
   } as const,
+  quickActionsScroll: {
+    marginBottom: 8,
+  } as const,
+  quickActionsContainer: {
+    flexDirection: 'row' as const,
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+  } as const,
+  quickActionCard: {
+    width: 140,
+    backgroundColor: theme.colors.surface,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  } as const,
+  actionIconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  } as const,
+  actionTitle: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: theme.colors.text,
+    textAlign: 'center',
+    lineHeight: 16,
+  } as const,
+  coverageCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  } as const,
+  coverageHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: 12,
+  } as const,
+  coverageType: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  } as const,
+  coverageIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  } as const,
+  coverageTitle: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: theme.colors.text,
+  } as const,
+  coverageAmount: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: theme.colors.primary,
+  } as const,
+  coverageDetails: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  } as const,
+  policyCount: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+  } as const,
+  coverageStatus: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: theme.colors.success,
+    backgroundColor: `${theme.colors.success}15`,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  } as const,
 }));
 
 const getGreeting = () => {
@@ -182,6 +268,24 @@ const getGreeting = () => {
   if (hour < 12) return 'goodMorning';
   if (hour < 18) return 'goodAfternoon';
   return 'goodEvening';
+};
+
+const getPolicyIcon = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'auto': return 'car-sport';
+    case 'home': return 'home';
+    case 'life': return 'person';
+    default: return 'shield-checkmark';
+  }
+};
+
+const getPolicyColor = (type: string) => {
+  switch (type.toLowerCase()) {
+    case 'auto': return '#FF6B6B';
+    case 'home': return '#4ECDC4';
+    case 'life': return '#45B7D1';
+    default: return '#96CEB4';
+  }
 };
 
 export const DashboardScreen: React.FC = () => {
@@ -206,6 +310,8 @@ export const DashboardScreen: React.FC = () => {
   const checkTrackingStatus = React.useCallback(async () => {
     const hasPermissions = await tripTracker.hasPermissions();
     const isTracking = tripTracker.isTrackingActive();
+
+    console.log('Tracking status check:', { hasPermissions, isTracking });
     
     // If we have permissions but tracking is not active, start tracking
     if (hasPermissions && !isTracking) {
@@ -258,31 +364,42 @@ export const DashboardScreen: React.FC = () => {
     setShowPermissionCard(false);
   };
 
-  // Quick Actions Data
+
   const quickActions = [
     {
       title: t('dashboard.quickActions.startClaim'),
       icon: 'document-text' as const,
       route: '/claims/new',
       color: '#FF6B6B',
+      gradient: ['#FF6B6B', '#FF8E8E'],
     },
     {
       title: t('dashboard.quickActions.viewCoverage'),
       icon: 'shield-checkmark' as const,
       route: '/coverage',
       color: '#4ECDC4',
+      gradient: ['#4ECDC4', '#67D7D0'],
     },
     {
       title: t('dashboard.quickActions.proofInsurance'),
       icon: 'card' as const,
       route: '/documents',
       color: '#45B7D1',
+      gradient: ['#45B7D1', '#5FC1D9'],
     },
     {
       title: t('dashboard.quickActions.billing'),
       icon: 'cash' as const,
       route: '/billing',
       color: '#96CEB4',
+      gradient: ['#96CEB4', '#A9D8C1'],
+    },
+    {
+      title: 'Driving Score',
+      icon: 'speedometer' as const,
+      route: '/driving',
+      color: '#6C5CE7',
+      gradient: ['#6C5CE7', '#8174EA'],
     },
   ];
 
@@ -405,23 +522,38 @@ export const DashboardScreen: React.FC = () => {
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {t('dashboard.quickActions.title')}
-            </Text>
-            <View style={styles.quickActionsGrid}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {t('dashboard.quickActions.title')}
+              </Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAll}>
+                  {t('common.viewAll')}
+              </Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.quickActionsScroll}
+              contentContainerStyle={styles.quickActionsContainer}
+            >
               {quickActions.map((action, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.quickActionCard}
                   onPress={() => router.push(action.route as any)}
                 >
-                  <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
-                    <Ionicons name={action.icon} size={20} color="white" />
+                  <View style={[styles.actionIconContainer, { 
+                    backgroundColor: action.color,
+                    shadowColor: action.color,
+                  }]}>
+                    <Ionicons name={action.icon} size={24} color="white" />
                   </View>
                   <Text style={styles.actionTitle}>{action.title}</Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </View>
 
           {/* My Coverage - Show active policies */}
@@ -446,6 +578,7 @@ export const DashboardScreen: React.FC = () => {
               ))}
             </View>
           )}
+
 
           {/* Recent Activity - Only show if there's data */}
           {recentActivity && recentActivity.length > 0 && (

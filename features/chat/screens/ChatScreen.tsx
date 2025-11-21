@@ -1,13 +1,16 @@
 import { Header } from '@/components/layout/Header';
 import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useSafeArea } from '@/hooks/useSafeArea';
 import { useTranslation } from '@/hooks/useTranslation';
 import { chatAPI } from '@/services/api/endpoints';
 import { useRouter } from 'expo-router';
-import { Send, X } from 'lucide-react-native';
+import { MessageCircle, Send, X } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -24,11 +27,40 @@ const useStyles = createThemedStyles((theme) => ({
     flex: 1,
     backgroundColor: theme.colors.background,
   } as const,
+  headerWrapper: {
+    backgroundColor: theme.colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  } as const,
+  headerRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingRight: 16,
+    paddingLeft: 8,
+  } as const,
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.error + '15',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginRight: 8,
+  } as const,
   headerContent: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.primaryLight + '10',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
   } as const,
   agentInfo: {
     flex: 1,
@@ -62,6 +94,7 @@ const useStyles = createThemedStyles((theme) => ({
   messagesContainer: {
     flex: 1,
     padding: theme.spacing.md,
+    backgroundColor: theme.colors.background,
   } as const,
   emptyState: {
     flex: 1,
@@ -76,17 +109,23 @@ const useStyles = createThemedStyles((theme) => ({
   } as const,
   inputContainer: {
     flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    alignItems: 'flex-end' as const,
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
     backgroundColor: theme.colors.card,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
   } as const,
   input: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    borderRadius: theme.radii.lg,
+    borderRadius: 24,
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
     fontSize: 15,
@@ -94,6 +133,7 @@ const useStyles = createThemedStyles((theme) => ({
     borderWidth: 1,
     borderColor: theme.colors.border,
     maxHeight: 100,
+    minHeight: 44,
   } as const,
   sendButton: {
     marginLeft: theme.spacing.sm,
@@ -103,6 +143,11 @@ const useStyles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   } as const,
   sendButtonDisabled: {
     opacity: 0.5,
@@ -117,6 +162,7 @@ export const ChatScreen: React.FC = () => {
   const styles = useStyles();
   const { t } = useTranslation();
   const router = useRouter();
+  const { bottom: safeAreaBottom } = useSafeArea();
   const scrollViewRef = useRef<ScrollView>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -125,6 +171,7 @@ export const ChatScreen: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [agentStatus, setAgentStatus] = useState<'online' | 'offline' | 'away'>('offline');
   const [agentName, setAgentName] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     loadChatSession();
@@ -137,6 +184,40 @@ export const ChatScreen: React.FC = () => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      // iOS keyboard listeners - don't touch this
+      const keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 250);
+      });
+
+      const keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', () => {
+        setKeyboardHeight(0);
+      });
+
+      return () => {
+        keyboardWillShowListener.remove();
+        keyboardWillHideListener.remove();
+      };
+    } else {
+      // Android: Standard approach - let the system handle it with adjustResize
+      // Just track keyboard for scroll behavior
+      const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+        // Scroll to bottom when keyboard shows
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      });
+
+      return () => {
+        keyboardDidShowListener.remove();
+      };
+    }
+  }, []);
 
   const loadChatSession = async () => {
     try {
@@ -232,25 +313,44 @@ export const ChatScreen: React.FC = () => {
     }
   };
 
+  const { theme } = useTheme();
+
   return (
     <View style={styles.container}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 16 }}>
-        <Header
-          title={t('chat.title')}
-          showNotifications={false}
-        />
-        <TouchableOpacity
-          onPress={handleEndChat}
-          activeOpacity={0.7}
-          style={{ padding: 8 }}
-        >
-          <X size={24} color={styles.agentName.color} />
-        </TouchableOpacity>
+      {/* Header with Close Button */}
+      <View style={styles.headerWrapper}>
+        <View style={styles.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Header
+              title={t('chat.title')}
+              showNotifications={false}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={handleEndChat}
+            activeOpacity={0.7}
+            style={styles.closeButton}
+            accessibilityLabel={t('chat.endChat')}
+            accessibilityRole="button"
+          >
+            <X size={20} color={theme.colors.error} />
+          </TouchableOpacity>
+        </View>
       </View>
       
       {/* Agent Info Bar */}
-      <View style={[styles.headerContent, { borderBottomWidth: 1 }]}>
-        <View style={[styles.statusDot, getStatusColor()]} />
+      <View style={styles.headerContent}>
+        <View style={[
+          styles.statusDot, 
+          getStatusColor(),
+          {
+            width: 12,
+            height: 12,
+            borderRadius: 6,
+            marginRight: 10,
+          }
+        ]} />
+        <MessageCircle size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
         <View style={styles.agentInfo}>
           <Text variant="body" weight="semibold" style={styles.agentName}>
             {agentName || 'Support Agent'}
@@ -262,25 +362,33 @@ export const ChatScreen: React.FC = () => {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        enabled={true}
       >
         {/* Messages */}
         <ScrollView
           ref={scrollViewRef}
           style={styles.messagesContainer}
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ 
+            flexGrow: 1,
+            paddingBottom: 16
+          }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           {isLoading ? (
             <View style={styles.emptyState}>
+              <MessageCircle size={48} color={styles.emptyText.color} style={{ opacity: 0.3, marginBottom: 16 }} />
               <Text variant="body" style={styles.emptyText}>
                 {t('chat.connecting')}
               </Text>
             </View>
           ) : messages.length === 0 ? (
             <View style={styles.emptyState}>
+              <MessageCircle size={48} color={styles.emptyText.color} style={{ opacity: 0.3, marginBottom: 16 }} />
               <Text variant="body" style={styles.emptyText}>
                 {t('chat.noMessages')}
               </Text>
@@ -300,7 +408,18 @@ export const ChatScreen: React.FC = () => {
         </ScrollView>
 
         {/* Input */}
-        <View style={styles.inputContainer}>
+        <View 
+          style={[
+            styles.inputContainer,
+            Platform.OS === 'ios' 
+              ? {
+                  paddingBottom: safeAreaBottom + 12
+                }
+              : {
+                  paddingBottom: 8
+                }
+          ]}
+        >
           <TextInput
             style={styles.input}
             placeholder={t('chat.placeholder')}
@@ -310,6 +429,15 @@ export const ChatScreen: React.FC = () => {
             multiline
             maxLength={500}
             editable={!isSending && !isTyping}
+            textAlignVertical="center"
+            onFocus={() => {
+              if (Platform.OS === 'android') {
+                // On Android, scroll to bottom when input is focused
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+              }
+            }}
           />
           <TouchableOpacity
             style={[styles.sendButton, (!inputText.trim() || isSending || isTyping) && styles.sendButtonDisabled]}

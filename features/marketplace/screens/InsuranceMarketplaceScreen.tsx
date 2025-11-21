@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { usePaymentMethods } from '@/features/billing/hooks/usePaymentMethods';
+import { useProfile } from '@/features/profile/hooks/useProfile';
+import type { InsuranceType } from '@/features/quotes/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useRouter } from 'expo-router';
 import { ShoppingBag } from 'lucide-react-native';
@@ -54,13 +56,14 @@ const useStyles = createThemedStyles((theme) => ({
   } as const,
 }));
 
-const insuranceTypes = [
+const insuranceTypes: Array<{ id: 'all' | InsuranceType; translationKey: string }> = [
   { id: 'all', translationKey: 'allInsurance' },
   { id: 'auto', translationKey: 'auto' },
   { id: 'home', translationKey: 'home' },
   { id: 'life', translationKey: 'life' },
   { id: 'health', translationKey: 'health' },
   { id: 'travel', translationKey: 'travel' },
+  { id: 'motorcycle', translationKey: 'motorcycle' },
 ];
 
 export const InsuranceMarketplaceScreen: React.FC = () => {
@@ -69,7 +72,8 @@ export const InsuranceMarketplaceScreen: React.FC = () => {
   const router = useRouter();
   const { products, loading, subscribeToProduct } = useMarketplace();
   const { paymentMethods } = usePaymentMethods();
-  const [selectedType, setSelectedType] = useState('all');
+  const { profile } = useProfile();
+  const [selectedType, setSelectedType] = useState<'all' | InsuranceType>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [subscribingId, setSubscribingId] = useState<string | null>(null);
 
@@ -107,36 +111,50 @@ export const InsuranceMarketplaceScreen: React.FC = () => {
 
     setSubscribingId(product.id);
     try {
-      // First, create the subscription/policy
-      const result = await subscribeToProduct({
-        productId: product.id,
-        personalInfo: {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'user@example.com',
-          phone: '+1234567890',
-        },
-        coverageDetails: {},
+      // Navigate to quote form with pre-filled product information
+      // This ensures users go through the proper quote process with all details
+      router.push({
+        pathname: '/quotes/new',
+        params: {
+          productId: product.id,
+          type: product.type,
+        } as any,
       });
-
-      if (result.success) {
-        // Create an invoice for the first payment
-        // In a real app, this would be done by the backend
-        // For now, we'll just show success
-        Alert.alert(
-          t('common.success'),
-          t('marketplace.subscribeSuccess'),
-          [
-            {
-              text: t('common.ok'),
-              onPress: () => {
-                // Optionally navigate to billing to see the new invoice
-                router.push('/billing' as any);
-              },
-            },
-          ]
-        );
-      }
+      setSubscribingId(null);
+      return;
+      
+      // Alternative: Direct subscription (commented out - use quote flow instead)
+      // const result = await subscribeToProduct({
+      //   productId: product.id,
+      //   personalInfo: {
+      //     firstName: profile?.firstName || '',
+      //     lastName: profile?.lastName || '',
+      //     email: profile?.email || '',
+      //     phone: profile?.phone || '',
+      //     address: profile?.address || '',
+      //   },
+      //   details: {} as any,
+      // });
+      
+      // Note: result is not available in current flow (direct subscription is commented out)
+      // if (result.success) {
+      //   // Create an invoice for the first payment
+      //   // In a real app, this would be done by the backend
+      //   // For now, we'll just show success
+      //   Alert.alert(
+      //     t('common.success'),
+      //     t('marketplace.subscribeSuccess'),
+      //     [
+      //       {
+      //         text: t('common.ok'),
+      //         onPress: () => {
+      //           // Optionally navigate to billing to see the new invoice
+      //           router.push('/billing' as any);
+      //         },
+      //       },
+      //     ]
+      //   );
+      // }
     } catch (error) {
       Alert.alert(
         t('common.error'),

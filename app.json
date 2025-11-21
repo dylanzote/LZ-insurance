@@ -9,7 +9,18 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourcompany.lzinsurance",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "LZ Insurance needs access to your location to track trips and calculate your driving score for potential insurance discounts.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "LZ Insurance needs access to your location in the background to continuously track trips and calculate your driving score for potential insurance discounts.",
+        "NSLocationAlwaysUsageDescription": "LZ Insurance needs access to your location in the background to continuously track trips and calculate your driving score for potential insurance discounts.",
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +30,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION"
+      ],
+      "package": "com.yourcompany.lzinsurance",
+      "softwareKeyboardLayoutMode": "adjustResize"
     },
     "web": {
       "output": "static",
@@ -27,6 +45,8 @@
     },
     "plugins": [
       "expo-router",
+      "expo-localization",
+      "expo-background-fetch",
       [
         "expo-splash-screen",
         {
@@ -39,7 +59,15 @@
           }
         }
       ],
-      "expo-localization"
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "LZ Insurance needs access to your location in the background to continuously track trips and calculate your driving score for potential insurance discounts.",
+          "locationWhenInUsePermission": "LZ Insurance needs access to your location to track trips and calculate your driving score for potential insurance discounts.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

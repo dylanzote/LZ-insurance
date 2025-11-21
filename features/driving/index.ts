@@ -4,6 +4,8 @@ export { ScoreMeter } from './components/ScoreMeter';
 export { CircularScoreMeter } from './components/CircularScoreMeter';
 export { TripReviewCard } from './components/TripReviewCard';
 export { DriverValidationModal } from './components/DriverValidationModal';
+export { TripMap } from './components/TripMap';
+export { TripPerformanceDetails } from './components/TripPerformanceDetails';
 export { useDrivingScore } from './hooks/useDrivingScore';
 export { useTripsToReview } from './hooks/useTripsToReview';
 export { DataTrackingToggle } from './components/DataTrackingToggle';

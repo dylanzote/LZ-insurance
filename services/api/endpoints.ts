@@ -1,5 +1,6 @@
 import type { AddPaymentMethodRequest, BillingSummary, Invoice, PaymentMethod, PaymentRequest } from '@/features/billing/types';
 import type { ChatMessage } from '@/features/chat/types';
+import type { TripData } from '@/features/driving/types';
 
 // ... existing code ...
 
@@ -557,6 +558,34 @@ export const dashboardAPI = {
       return acc;
     }, {} as Record<string, { type: string; amount: number; policyCount: number }>);
 
+    // Generate recent activity from policies, claims, and invoices
+    const recentActivity = [
+      // Recent policies
+      ...mockPolicies.slice(0, 2).map((policy, index) => ({
+        id: `activity_policy_${policy.id}`,
+        type: 'policy' as const,
+        description: `${policy.type.charAt(0).toUpperCase() + policy.type.slice(1)} policy ${policy.status === 'active' ? 'active' : 'renewed'}`,
+        date: policy.startDate || new Date(Date.now() - (index + 1) * 30 * 24 * 60 * 60 * 1000).toISOString(),
+        amount: policy.premium,
+      })),
+      // Recent claims
+      ...mockClaims.slice(0, 2).map((claim, index) => ({
+        id: `activity_claim_${claim.id}`,
+        type: 'claim' as const,
+        description: `Claim ${claim.status === 'approved' ? 'approved' : claim.status === 'rejected' ? 'rejected' : 'submitted'}: ${claim.title}`,
+        date: claim.createdAt || claim.incidentDate || new Date(Date.now() - (index + 3) * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        amount: claim.amount,
+      })),
+      // Recent payments (from invoices)
+      ...mockInvoices.filter(inv => inv.status === 'paid').slice(0, 2).map((invoice, index) => ({
+        id: `activity_payment_${invoice.id}`,
+        type: 'payment' as const,
+        description: `Payment received for ${invoice.policyType} policy`,
+        date: invoice.paidDate || invoice.createdAt || new Date(Date.now() - (index + 5) * 14 * 24 * 60 * 60 * 1000).toISOString(),
+        amount: invoice.amount,
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
     return {
       data: {
         totalPolicies: mockPolicies.length,
@@ -564,6 +593,7 @@ export const dashboardAPI = {
         pendingClaims: mockClaims.filter(c => c.status === 'submitted' || c.status === 'in-review').length,
         totalCoverage,
         coverageBreakdown: Object.values(coverageBreakdown),
+        recentActivity,
       },
     };
   },
@@ -578,9 +608,12 @@ export const profileAPI = {
         email: 'user@example.com',
         firstName: 'John',
         lastName: 'Doe',
+        phoneNumber: '+1 234 567 8900',
         phone: '+1 234 567 8900',
         address: '123 Main Street, Toronto, ON M5H 2N2',
         dateOfBirth: '1990-01-15',
+        maritalStatus: 'single',
+        gender: 'male',
       },
     };
   },
@@ -593,7 +626,7 @@ export const profileAPI = {
       },
     };
   },
-  changePassword: async (data: { currentPassword: string; newPassword: string }) => {
+  changePassword: async (data: { currentPassword: string; newPassword: string; confirmPassword?: string }) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     if (data.currentPassword !== 'password123') {
       throw new Error('Current password is incorrect');
@@ -605,7 +638,173 @@ export const profileAPI = {
       },
     };
   },
+
+  // Send verification code for two-step verification
+  sendVerificationCode: async (method: 'sms' | 'email') => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return {
+      data: {
+        success: true,
+        message: `Verification code sent via ${method}`,
+        method,
+      },
+    };
+  },
+
+  // Verify two-step verification code
+  verifyTwoStepCode: async (code: string, method: 'sms' | 'email') => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Mock: accept any 6-digit code
+    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+      throw new Error('Invalid verification code');
+    }
+    return {
+      data: {
+        success: true,
+        message: 'Two-step verification enabled',
+        method,
+      },
+    };
+  },
+
+  // Disable two-step verification
+  disableTwoStepVerification: async () => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return {
+      data: {
+        success: true,
+        message: 'Two-step verification disabled',
+      },
+    };
+  },
 };
+
+export const feedbackAPI = {
+  // Get all feedbacks for the current user
+  getAll: async () => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return {
+      data: [...mockFeedbacks],
+    };
+  },
+
+  // Get feedback statistics
+  getStats: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const total = mockFeedbacks.length;
+    const byCategory: Record<string, number> = {
+      bug: 0,
+      feature: 0,
+      improvement: 0,
+      complaint: 0,
+      compliment: 0,
+      other: 0,
+    };
+    let totalRating = 0;
+    let ratingCount = 0;
+    let resolved = 0;
+    let pending = 0;
+
+    mockFeedbacks.forEach(feedback => {
+      byCategory[feedback.category] = (byCategory[feedback.category] || 0) + 1;
+      if (feedback.rating) {
+        totalRating += feedback.rating;
+        ratingCount++;
+      }
+      if (feedback.status === 'resolved') {
+        resolved++;
+      } else if (feedback.status === 'in-review' || feedback.status === 'submitted') {
+        pending++;
+      }
+    });
+
+    return {
+      data: {
+        total,
+        byCategory,
+        averageRating: ratingCount > 0 ? totalRating / ratingCount : 0,
+        resolved,
+        pending,
+      },
+    };
+  },
+
+  // Submit new feedback
+  submit: async (data: {
+    category: string;
+    title: string;
+    message: string;
+    rating?: number;
+  }) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const newFeedback = {
+      id: `feedback_${Date.now()}`,
+      userId: '1',
+      category: data.category as any,
+      title: data.title,
+      message: data.message,
+      rating: data.rating ?? 0,
+      status: 'submitted' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    mockFeedbacks.unshift(newFeedback);
+    return {
+      data: newFeedback,
+    };
+  },
+
+  // Delete feedback
+  delete: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const index = mockFeedbacks.findIndex(f => f.id === id);
+    if (index > -1) {
+      mockFeedbacks.splice(index, 1);
+    }
+    return {
+      data: { success: true },
+    };
+  },
+};
+
+// Mock feedback data
+const mockFeedbacks = [
+  {
+    id: 'feedback_1',
+    userId: '1',
+    category: 'feature' as const,
+    title: 'Dark mode support',
+    message: 'Would love to see dark mode support in the app. It would be easier on the eyes during night time usage.',
+    rating: 5,
+    status: 'resolved' as const,
+    createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+    response: 'Thank you for your feedback! Dark mode has been implemented and is now available in the app settings.',
+    respondedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'feedback_2',
+    userId: '1',
+    category: 'improvement' as const,
+    title: 'Faster claim processing',
+    message: 'The claim submission process could be streamlined. Currently it takes too many steps.',
+    rating: 4,
+    status: 'in-review' as const,
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'feedback_3',
+    userId: '1',
+    category: 'compliment' as const,
+    title: 'Great app design!',
+    message: 'I really love the modern design and user-friendly interface. Keep up the great work!',
+    rating: 5,
+    status: 'submitted' as const,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 export const chatAPI = {
   getMessages: async (sessionId?: string): Promise<ChatMessage[]> => {
@@ -621,6 +820,13 @@ export const chatAPI = {
       },
     ];
   },
+  getChatSession: async () => {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return {
+      agentName: 'Sarah Johnson',
+      status: 'online' as const,
+    };
+  },
   sendMessage: async (message: string, sessionId?: string): Promise<ChatMessage> => {
     await new Promise(resolve => setTimeout(resolve, 300));
     return {
@@ -634,169 +840,183 @@ export const chatAPI = {
   },
   getAgentResponse: async (userMessage: string, sessionId?: string): Promise<ChatMessage> => {
     await new Promise(resolve => setTimeout(resolve, 1500));
-    // Simple keyword-based responses
-    const lowerMessage = userMessage.toLowerCase();
-    let response = "I understand. Let me help you with that.";
     
-    if (lowerMessage.includes('claim')) {
-      response = "I can help you with your claim. You can file a new claim or track an existing one from the Claims section.";
-    } else if (lowerMessage.includes('policy') || lowerMessage.includes('coverage')) {
-      response = "I can help you with your policies. You can view all your policies and their details from the Policies section.";
-    } else if (lowerMessage.includes('payment') || lowerMessage.includes('billing')) {
-      response = "For billing questions, you can view your invoices and payment methods in the Billing section.";
-    } else if (lowerMessage.includes('premium') || lowerMessage.includes('price')) {
-      response = "Your premium depends on various factors. Check your policy details for specific amounts.";
-    }
+    // Import the getAgentResponse function from mockChat
+    const { getAgentResponse } = await import('@/features/chat/data/mockChat');
+    const responseText = getAgentResponse(userMessage);
     
     return {
       id: `msg_${Date.now()}`,
-      text: response,
+      text: responseText,
       sender: 'agent',
       timestamp: new Date().toISOString(),
-      read: false,
+      read: true,
       type: 'text',
     };
   },
-  getChatSession: async () => {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return {
-      agentName: 'Sarah Johnson',
-      status: 'online' as const,
-    };
-  },
 };
+
+// Driving trips mocks
+const initialTrips: TripData[] = [
+  {
+    id: 'trip_1',
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    distance: 12.5,
+    duration: 25,
+    isNightDriving: false,
+    score: 95,
+    events: {
+      speeding: 0,
+      hardBraking: 0,
+      rapidAcceleration: 0,
+      cornering: 0,
+      phoneUsage: 0,
+    },
+  },
+  {
+    id: 'trip_2',
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    distance: 8.3,
+    duration: 20,
+    isNightDriving: false,
+    score: 88,
+    events: {
+      speeding: 0,
+      hardBraking: 1,
+      rapidAcceleration: 0,
+      cornering: 0,
+      phoneUsage: 0,
+    },
+  },
+  {
+    id: 'trip_3',
+    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    distance: 15.7,
+    duration: 30,
+    isNightDriving: false,
+    score: 92,
+    events: {
+      speeding: 0,
+      hardBraking: 0,
+      rapidAcceleration: 0,
+      cornering: 0,
+      phoneUsage: 0,
+    },
+  },
+  {
+    id: 'trip_4',
+    date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    distance: 22.1,
+    duration: 40,
+    isNightDriving: true,
+    score: 85,
+    events: {
+      speeding: 1,
+      hardBraking: 0,
+      rapidAcceleration: 0,
+      cornering: 0,
+      phoneUsage: 0,
+    },
+  },
+  {
+    id: 'trip_5',
+    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    distance: 18.9,
+    duration: 30,
+    isNightDriving: false,
+    score: 92,
+    events: {
+      speeding: 0,
+      hardBraking: 0,
+      rapidAcceleration: 0,
+      cornering: 0,
+      phoneUsage: 0,
+    },
+  },
+];
+
+let mockTrips: TripData[] = [...initialTrips];
+
+// Start with two existing trips that require review
+// Add createdAt and locations for review deadline and map display
+let mockTripsToReview: TripData[] = [
+  {
+    ...initialTrips[1],
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    startLocation: {
+      latitude: 45.5017,
+      longitude: -73.5673,
+      address: '123 Main St, Montreal, QC',
+    },
+    endLocation: {
+      latitude: 45.5088,
+      longitude: -73.5878,
+      address: '456 Oak Ave, Montreal, QC',
+    },
+    events: {
+      ...initialTrips[1].events,
+      hardBraking: 1, // This trip has hard braking event
+    },
+  },
+  {
+    ...initialTrips[3],
+    createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+    startLocation: {
+      latitude: 45.5017,
+      longitude: -73.5673,
+      address: '789 Pine Rd, Montreal, QC',
+    },
+    endLocation: {
+      latitude: 45.5150,
+      longitude: -73.5700,
+      address: '321 Elm St, Montreal, QC',
+    },
+    events: {
+      ...initialTrips[3].events,
+      speeding: 1, // This trip has speeding event
+    },
+  },
+];
 
 export const tripsAPI = {
   // Get trips that need review
   getTripsToReview: async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
+    const sorted = [...mockTripsToReview].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
     return {
-      data: [
-        {
-          id: 'trip_review_1',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 25.3,
-          duration: 45,
-          isNightDriving: false,
-          score: 75,
-          events: {
-            speeding: 2,
-            hardBraking: 1,
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-        {
-          id: 'trip_review_2',
-          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 18.7,
-          duration: 35,
-          isNightDriving: true,
-          score: 68,
-          events: {
-            speeding: 3,
-            hardBraking: 2,
-            rapidAcceleration: 1,
-            cornering: 1,
-            phoneUsage: 1,
-          },
-        },
-      ],
+      data: sorted,
     };
   },
 
   // Get all trips
   getAll: async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
+    const sorted = [...mockTrips].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
     return {
-      data: [
-        {
-          id: 'trip_1',
-          date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 12.5,
-          duration: 25,
-          isNightDriving: false,
-          score: 95,
-          events: { 
-            speeding: 0, 
-            hardBraking: 0, 
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-        {
-          id: 'trip_2',
-          date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 8.3,
-          duration: 20,
-          isNightDriving: false,
-          score: 88,
-          events: { 
-            speeding: 0, 
-            hardBraking: 1, 
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-        {
-          id: 'trip_3',
-          date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 15.7,
-          duration: 30,
-          isNightDriving: false,
-          score: 92,
-          events: { 
-            speeding: 0, 
-            hardBraking: 0, 
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-        {
-          id: 'trip_4',
-          date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 22.1,
-          duration: 40,
-          isNightDriving: true,
-          score: 85,
-          events: { 
-            speeding: 1, 
-            hardBraking: 0, 
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-        {
-          id: 'trip_5',
-          date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          distance: 18.9,
-          duration: 30,
-          isNightDriving: false,
-          score: 92,
-          events: { 
-            speeding: 0, 
-            hardBraking: 0, 
-            rapidAcceleration: 0,
-            cornering: 0,
-            phoneUsage: 0,
-          },
-        },
-      ],
+      data: sorted,
     };
   },
 
-  submitTrip: async (tripData: any) => {
+  submitTrip: async (tripData: TripData) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    console.log('Trip submitted to backend:', tripData);
+    const id = tripData.id || `trip_${Date.now()}`;
+    const normalizedTrip: TripData = { ...tripData, id };
+
+    const existingIndex = mockTrips.findIndex(trip => trip.id === id);
+    if (existingIndex !== -1) {
+      mockTrips[existingIndex] = normalizedTrip;
+    } else {
+      mockTrips.unshift(normalizedTrip);
+      mockTripsToReview.unshift(normalizedTrip);
+    }
+
     return {
       data: {
-        id: tripData.id || `trip_${Date.now()}`,
-        ...tripData,
+        ...normalizedTrip,
         synced: true,
         syncedAt: new Date().toISOString(),
       },
@@ -805,10 +1025,29 @@ export const tripsAPI = {
 
   reviewTrip: async (tripId: string, reviewed: boolean = true) => {
     await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Remove from trips to review
+    mockTripsToReview = mockTripsToReview.filter(trip => trip.id !== tripId);
+    
+    // If rejected, don't add to reviewed trips (don't register it)
+    if (!reviewed) {
+      // Also remove from all trips if it was rejected
+      mockTrips = mockTrips.filter(trip => trip.id !== tripId);
+      return {
+        data: {
+          id: tripId,
+          reviewed: false,
+          rejected: true,
+          rejectedAt: new Date().toISOString(),
+        },
+      };
+    }
+    
+    // If confirmed, keep it in mockTrips (already there)
     return {
       data: {
         id: tripId,
-        reviewed,
+        reviewed: true,
         reviewedAt: new Date().toISOString(),
       },
     };
@@ -936,5 +1175,170 @@ export const billingAPI = {
     await new Promise(resolve => setTimeout(resolve, 300));
     const invoices = mockInvoices.filter(inv => inv.policyId === policyId);
     return { data: invoices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) };
+  },
+};
+
+// Quotes API
+let mockQuotes: any[] = [];
+
+export const quotesAPI = {
+  // Get all quotes
+  getAll: async () => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      data: mockQuotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    };
+  },
+
+  // Get quote by ID
+  getById: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const quote = mockQuotes.find(q => q.id === id);
+    if (!quote) throw new Error('Quote not found');
+    return { data: quote };
+  },
+
+  // Calculate quote
+  calculate: async (data: any) => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Base premium calculation based on type
+    let basePremium = 0;
+    const discounts: any[] = [];
+    const adjustments: any[] = [];
+
+    switch (data.type) {
+      case 'auto':
+        basePremium = 1200; // Annual base
+        if (data.details?.coverageLevel === 'premium') {
+          adjustments.push({ name: 'Premium Coverage', amount: 400 });
+        } else if (data.details?.coverageLevel === 'basic') {
+          discounts.push({ name: 'Basic Coverage', amount: -200, percentage: -16.67 });
+        }
+        if (data.details?.deductible && data.details.deductible >= 1000) {
+          discounts.push({ name: 'High Deductible', amount: -150, percentage: -12.5 });
+        }
+        break;
+      case 'motorcycle':
+        basePremium = 800; // Annual base - typically cheaper than auto
+        if (data.details?.coverageLevel === 'premium') {
+          adjustments.push({ name: 'Premium Coverage', amount: 300 });
+        } else if (data.details?.coverageLevel === 'basic') {
+          discounts.push({ name: 'Basic Coverage', amount: -150, percentage: -18.75 });
+        }
+        if (data.details?.deductible && data.details.deductible >= 1000) {
+          discounts.push({ name: 'High Deductible', amount: -120, percentage: -15 });
+        }
+        break;
+      case 'home':
+        basePremium = 1500;
+        if (data.details?.coverageLevel === 'premium') {
+          adjustments.push({ name: 'Premium Coverage', amount: 500 });
+        } else if (data.details?.coverageLevel === 'basic') {
+          discounts.push({ name: 'Basic Coverage', amount: -300, percentage: -20 });
+        }
+        break;
+      case 'life':
+        basePremium = (data.details?.coverageAmount || 500000) * 0.001; // 0.1% of coverage
+        if (data.details?.healthStatus === 'excellent') {
+          discounts.push({ name: 'Excellent Health', amount: -basePremium * 0.2, percentage: -20 });
+        }
+        if (!data.details?.smoker) {
+          discounts.push({ name: 'Non-Smoker', amount: -basePremium * 0.15, percentage: -15 });
+        }
+        break;
+      case 'health':
+        basePremium = data.details?.familySize && data.details.familySize > 1 
+          ? 6000 
+          : 3600;
+        if (data.details?.coverageLevel === 'basic') {
+          discounts.push({ name: 'Basic Plan', amount: -600, percentage: -10 });
+        }
+        break;
+      case 'travel':
+        basePremium = (data.details?.tripDuration || 7) * 15;
+        if (data.details?.travelers && data.details.travelers > 1) {
+          adjustments.push({ name: 'Multiple Travelers', amount: (data.details.travelers - 1) * 50 });
+        }
+        break;
+    }
+
+    const discountTotal = discounts.reduce((sum, d) => sum + d.amount, 0);
+    const adjustmentTotal = adjustments.reduce((sum, a) => sum + a.amount, 0);
+    const subtotal = basePremium + discountTotal + adjustmentTotal;
+    const taxes = subtotal * 0.08; // 8% tax
+    const total = subtotal + taxes;
+    const monthlyPremium = total / 12;
+    const annualPremium = total;
+
+    return {
+      data: {
+        basePremium,
+        discounts,
+        adjustments,
+        subtotal,
+        taxes,
+        total,
+        monthlyPremium: Math.round(monthlyPremium * 100) / 100,
+        annualPremium: Math.round(annualPremium * 100) / 100,
+      },
+    };
+  },
+
+  // Create quote
+  create: async (data: any) => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Calculate quote first
+    const calculation = await quotesAPI.calculate(data);
+    
+    const newQuote = {
+      id: `quote_${Date.now()}`,
+      userId: '1',
+      type: data.type,
+      status: 'pending' as const,
+      personalInfo: data.personalInfo,
+      details: data.details,
+      monthlyPremium: calculation.data.monthlyPremium,
+      annualPremium: calculation.data.annualPremium,
+      coverageAmount: data.details?.coverageAmount,
+      deductible: data.details?.deductible,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    mockQuotes.unshift(newQuote);
+    return { data: newQuote };
+  },
+
+  // Convert quote to policy
+  convertToPolicy: async (quoteId: string) => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const quote = mockQuotes.find(q => q.id === quoteId);
+    if (!quote) throw new Error('Quote not found');
+    
+    // In real app, this would create a policy
+    const policyId = `POL-${Date.now()}`;
+    quote.status = 'converted';
+    quote.convertedToPolicyId = policyId;
+    quote.updatedAt = new Date().toISOString();
+    
+    return {
+      data: {
+        success: true,
+        policyId,
+        message: 'Quote converted to policy successfully',
+      },
+    };
+  },
+
+  // Delete quote
+  delete: async (id: string) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const index = mockQuotes.findIndex(q => q.id === id);
+    if (index === -1) throw new Error('Quote not found');
+    mockQuotes.splice(index, 1);
+    return { data: { success: true } };
   },
 };

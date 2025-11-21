@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileAPI } from '@/services/api/endpoints';
+import { useEffect, useState } from 'react';
 import type { UserProfile } from '../types';
 
 export const useProfile = () => {
@@ -16,13 +16,15 @@ export const useProfile = () => {
         setIsLoadingProfile(true);
         const profileData = await profileAPI.getProfile();
         setProfile({
-          id: profileData.id,
-          email: profileData.email,
-          firstName: profileData.firstName,
-          lastName: profileData.lastName,
-          phone: profileData.phoneNumber,
-          address: profileData.address,
-          dateOfBirth: profileData.dateOfBirth,
+          id: profileData.data.id,
+          email: profileData.data.email,
+          firstName: profileData.data.firstName,
+          lastName: profileData.data.lastName,
+          phone: profileData.data.phoneNumber || profileData.data.phone,
+          address: profileData.data.address,
+          dateOfBirth: profileData.data.dateOfBirth,
+          maritalStatus: profileData.data.maritalStatus,
+          gender: profileData.data.gender,
         });
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -62,8 +64,8 @@ export const useProfile = () => {
   };
 
   return {
-    user,
-    profile,
+    user, // User from auth context (fallback)
+    profile, // Profile from API (primary source)
     isLoading,
     isLoadingProfile,
     handleLogout,

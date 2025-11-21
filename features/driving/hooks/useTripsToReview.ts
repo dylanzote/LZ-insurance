@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { TripData } from '../types';
 import { tripsAPI } from '@/services/api/endpoints';
+import { useCallback, useEffect, useState } from 'react';
+import { TripData } from '../types';
 
 export const useTripsToReview = () => {
   const [trips, setTrips] = useState<TripData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTripsToReview = async () => {
+  const fetchTripsToReview = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -19,7 +19,7 @@ export const useTripsToReview = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const reviewTrip = async (tripId: string) => {
     try {
@@ -33,7 +33,7 @@ export const useTripsToReview = () => {
 
   useEffect(() => {
     fetchTripsToReview();
-  }, []);
+  }, [fetchTripsToReview]);
 
   return {
     trips,

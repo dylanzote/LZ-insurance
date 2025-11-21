@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { DashboardStats, RecentActivity } from '../types';
 import { dashboardAPI } from '@/services/api/endpoints';
+import { useEffect, useState } from 'react';
+import { DashboardStats, RecentActivity } from '../types';
 
 export const useDashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -13,6 +13,7 @@ export const useDashboard = () => {
       setLoading(true);
       const response = await dashboardAPI.getSummary();
       setStats(response.data);
+      // Extract recentActivity from response if it exists, otherwise use empty array
       setRecentActivity(response.data.recentActivity || []);
     } catch (err) {
       setError('Failed to load dashboard data');

@@ -1,28 +1,27 @@
-import React, { useState } from 'react';
-import { View, ScrollView, RefreshControl, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
-import { useTheme } from '@/core/theme/useTheme';
 import { Header } from '@/components/layout/Header';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { useClaims } from '../hooks/useClaims';
-import { Claim, ClaimStatus } from '../types';
+import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { Text } from '@/components/ui/Text';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useTranslation } from '@/hooks/useTranslation';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
+  AlertCircle,
   Calendar,
-  MapPin,
-  DollarSign,
-  FileText,
-  Image as ImageIcon,
   CheckCircle,
   Clock,
-  User,
+  DollarSign,
+  FileText,
+  MapPin,
   Shield,
-  AlertCircle,
+  User
 } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { Dimensions, Image, RefreshControl, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useClaims } from '../hooks/useClaims';
+import { Claim, ClaimStatus } from '../types';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -332,6 +331,7 @@ export const ClaimDetailScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
               <Text style={styles.title}>{claim.title}</Text>
               <Badge
+                label={t(`claims.status.${claim.status}`)}
                 variant={
                   claim.status === 'approved' || claim.status === 'settlement'
                     ? 'success'
@@ -339,9 +339,7 @@ export const ClaimDetailScreen: React.FC = () => {
                     ? 'error'
                     : 'info'
                 }
-              >
-                {t(`claims.status.${claim.status}`)}
-              </Badge>
+              />
             </View>
           </View>
         </Card>

@@ -5,6 +5,7 @@ import { i18n } from '@/core/i18n';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Calendar, Info, TrendingUp } from 'lucide-react-native';
 import React from 'react';
@@ -167,6 +168,12 @@ export const DrivingScoreScreen: React.FC = () => {
   const { trips: tripsToReview, loading: loadingTrips, refetch: refetchTrips } = useTripsToReview();
   const [showCalculationModal, setShowCalculationModal] = React.useState(false);
   const router = useRouter();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchTrips();
+    }, [refetchTrips])
+  );
 
   const handleReviewTrip = (tripId: string) => {
     router.push(`/driving/review?tripId=${tripId}` as any);

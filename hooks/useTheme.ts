@@ -1,5 +1,5 @@
- import { useContext } from 'react';
-import { ThemeContext } from '@/themes';
+ import { ThemeContext } from '@/core/theme';
+import { useContext } from 'react';
 
 /**
  * Custom hook to access theme context

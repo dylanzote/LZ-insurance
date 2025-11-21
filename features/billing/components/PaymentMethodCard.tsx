@@ -1,11 +1,11 @@
-import React from 'react';
-import { TouchableOpacity, View } from 'react-native';
-import { CreditCard, Building2, Check, MoreVertical } from 'lucide-react-native';
+import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
-import { Badge } from '@/components/ui/Badge';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Building2, CreditCard, MoreVertical } from 'lucide-react-native';
+import React from 'react';
+import { TouchableOpacity, View } from 'react-native';
 import type { PaymentMethod } from '../types';
 
 interface PaymentMethodCardProps {
@@ -111,7 +111,7 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
                 <Badge
                   variant="success"
                   label={t('billing.paymentMethod.default')}
-                  size="small"
+                  size="sm"
                 />
               )}
             </View>
