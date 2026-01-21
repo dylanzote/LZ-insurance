@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useNotifications } from '../hooks/useNotifications';
@@ -7,6 +7,8 @@ import { NotificationItem } from '../components/NotificationItem';
 import { Button } from '@/components/ui/Button';
 import { Notification } from '../types';
 import { Header } from '@/components/layout/Header';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Bell } from 'lucide-react-native';
 
 const useStyles = createThemedStyles((theme) => ({
   container: {
@@ -75,30 +77,35 @@ export const NotificationsScreen: React.FC = () => {
     markAllAsRead,
     deleteNotification,
     refreshNotifications,
+    handleNotificationTap,
   } = useNotifications();
 
-  const unreadNotifications = notifications.filter(n => !n.read);
-  const readNotifications = notifications.filter(n => n.read);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refreshNotifications();
+    setRefreshing(false);
+  };
 
   const handleNotificationPress = (notification: Notification) => {
-    if (!notification.read) {
-      markAsRead(notification.id);
-    }
-    // Navigate to relevant screen based on notification type
-    // For now, just mark as read
+    handleNotificationTap(notification);
   };
 
   const handleNotificationLongPress = (notification: Notification) => {
     deleteNotification(notification.id);
   };
 
-  if (loading) {
+  if (loading && notifications.length === 0) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-        <Text style={{ marginTop: 16, color: styles.subtitle.color }}>
-          {t('notifications.loading')}
-        </Text>
+      <View style={styles.container}>
+        <Header title={t('notifications.title')} showNotifications={false} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" />
+          <Text style={{ marginTop: 16, color: styles.subtitle.color }}>
+            {t('notifications.loading')}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -132,14 +139,14 @@ export const NotificationsScreen: React.FC = () => {
             />
           )}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {t('notifications.empty')}
-              </Text>
-              <Text style={[styles.emptyText, { fontSize: 14 }]}>
-                {t('notifications.emptySubtext')}
-              </Text>
-            </View>
+            <EmptyState
+              icon={Bell}
+              title={t('notifications.empty')}
+              message={t('notifications.emptySubtext')}
+            />
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
           showsVerticalScrollIndicator={false}
         />

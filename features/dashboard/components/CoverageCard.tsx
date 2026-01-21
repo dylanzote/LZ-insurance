@@ -1,5 +1,6 @@
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -18,7 +19,7 @@ const useStyles = createThemedStyles((theme) => ({
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -63,6 +64,7 @@ export const CoverageCard: React.FC<CoverageCardProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const { formatCurrency } = useFormatting();
 
   // Get translated type name, fallback to capitalized type if translation not found
   const typeName = t(`policies.types.${type.toLowerCase()}`) || type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
@@ -78,7 +80,7 @@ export const CoverageCard: React.FC<CoverageCardProps> = ({
         </Text>
       </View>
       <Text style={styles.amount}>
-        ${amount.toLocaleString()}
+        {formatCurrency(amount)}
       </Text>
     </TouchableOpacity>
   );

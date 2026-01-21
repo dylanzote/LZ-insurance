@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { Claim } from '../types';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 
 interface ClaimCardProps {
   claim: Claim;
@@ -15,7 +16,7 @@ const useStyles = createThemedStyles((theme) => ({
     padding: theme.spacing.md,
     borderRadius: theme.radii.md,
     marginVertical: 6,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -42,20 +43,20 @@ const useStyles = createThemedStyles((theme) => ({
     fontWeight: '600' as const,
   } as const,
   statusSubmitted: {
-    backgroundColor: '#fef3c7',
-    color: '#d97706',
+    backgroundColor: theme.colors.warning + '20',
+    color: theme.colors.warning,
   } as const,
   statusInReview: {
-    backgroundColor: '#dbeafe',
-    color: '#2563eb',
+    backgroundColor: theme.colors.info + '20',
+    color: theme.colors.info,
   } as const,
   statusApproved: {
-    backgroundColor: '#dcfce7',
-    color: '#16a34a',
+    backgroundColor: theme.colors.success + '20',
+    color: theme.colors.success,
   } as const,
   statusRejected: {
-    backgroundColor: '#fecaca',
-    color: '#dc2626',
+    backgroundColor: theme.colors.error + '20',
+    color: theme.colors.error,
   } as const,
   metaText: {
     fontSize: 14,
@@ -73,6 +74,7 @@ const useStyles = createThemedStyles((theme) => ({
 export const ClaimCard: React.FC<ClaimCardProps> = ({ claim, onPress }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const { formatCurrency, formatDate } = useFormatting();
 
   const getStatusStyle = () => {
     switch (claim.status) {
@@ -101,7 +103,7 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({ claim, onPress }) => {
       </View>
       
       <Text style={styles.metaText}>
-        {t(`policies.types.${claim.policyType}`)} • {new Date(claim.date).toLocaleDateString()}
+        {t(`policies.types.${claim.policyType}`)} • {formatDate(claim.date, { format: 'short' })}
       </Text>
       
       <Text style={styles.metaText} numberOfLines={2}>
@@ -109,7 +111,7 @@ export const ClaimCard: React.FC<ClaimCardProps> = ({ claim, onPress }) => {
       </Text>
       
       <Text style={styles.amount}>
-        ${claim.amount.toLocaleString()}
+        {formatCurrency(claim.amount)}
       </Text>
     </Pressable>
   );

@@ -70,7 +70,7 @@ const useStyles = createThemedStyles((theme) => ({
   warningContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: '#fef3c7',
+    backgroundColor: theme.colors.warning + '20',
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,

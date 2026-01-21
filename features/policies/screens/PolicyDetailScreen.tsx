@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FileText, AlertCircle, ChevronRight } from 'lucide-react-native';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
@@ -187,13 +188,14 @@ type TabType = 'coverage' | 'vehicle' | 'details';
 
 export const PolicyDetailScreen: React.FC = () => {
   const styles = useStyles();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { policies, loading, refetch } = usePolicies();
   const [refreshing, setRefreshing] = React.useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('coverage');
+  const { formatCurrency, formatDate } = useFormatting();
 
   // Find the policy by ID
   const policy = policies.find(p => p.id === id);
@@ -204,33 +206,12 @@ export const PolicyDetailScreen: React.FC = () => {
     setRefreshing(false);
   };
 
-  const formatLocale = locale === 'fr' ? 'fr-FR' : 'en-US';
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(formatLocale, {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(formatLocale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
   const formatShortDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(formatLocale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    return formatDate(dateString, { format: 'short' });
   };
 
   const handleStartClaim = () => {
-    router.push('/claims/new' as any);
+    router.push('/(app)/claims/new' as any);
   };
 
   const getPolicyDisplayName = () => {

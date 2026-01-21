@@ -102,7 +102,7 @@ export const InsuranceMarketplaceScreen: React.FC = () => {
           { text: t('common.cancel'), style: 'cancel' },
           {
             text: t('billing.addPaymentMethod'),
-            onPress: () => router.push('/billing/payment-methods?add=true' as any),
+            onPress: () => router.push('/(app)/billing/payment-methods?add=true' as any),
           },
         ]
       );

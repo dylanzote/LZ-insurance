@@ -3,6 +3,7 @@ import { View, Pressable } from 'react-native';
 import type { Policy } from '../types';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBusinessConfig } from '@/core/config/store';
 import { RenewalBanner } from './RenewalBanner';
 import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
@@ -22,7 +23,7 @@ const useStyles = createThemedStyles((theme) => ({
     padding: theme.spacing.md,
     borderRadius: theme.radii.md,
     marginVertical: 6,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
@@ -49,20 +50,20 @@ const useStyles = createThemedStyles((theme) => ({
     fontWeight: '600' as const,
   },
   statusActive: {
-    backgroundColor: '#dcfce7',
-    color: '#166534',
+    backgroundColor: theme.colors.success + '20',
+    color: theme.colors.success,
   },
   statusExpired: {
-    backgroundColor: '#fecaca',
-    color: '#dc2626',
+    backgroundColor: theme.colors.error + '20',
+    color: theme.colors.error,
   },
   statusPending: {
-    backgroundColor: '#fef3c7',
-    color: '#d97706',
+    backgroundColor: theme.colors.warning + '20',
+    color: theme.colors.warning,
   },
   statusCancelled: {
-    backgroundColor: '#e5e7eb',
-    color: '#6b7280',
+    backgroundColor: theme.colors.gray200,
+    color: theme.colors.gray600,
   },
   metaRow: {
     flexDirection: 'row' as const,
@@ -185,7 +186,7 @@ export const PolicyCard: React.FC<PolicyCardProps> = memo(({
       </View>
 
       {/* Renewal Banner - Only show for policies that need renewal */}
-      {(policy.canRenew || policy.daysUntilExpiry <= 30) && onRenew && (
+      {(policy.canRenew || policy.daysUntilExpiry <= (business.paymentGracePeriod || 30)) && onRenew && (
         <View style={styles.renewalSection}>
           <RenewalBanner 
             policy={policy} 

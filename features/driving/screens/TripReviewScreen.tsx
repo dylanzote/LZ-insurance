@@ -78,7 +78,7 @@ const useStyles = createThemedStyles((theme) => ({
     marginLeft: 8,
   } as const,
   scoreBadge: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: theme.colors.warning + '20',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
@@ -86,13 +86,15 @@ const useStyles = createThemedStyles((theme) => ({
   } as const,
   scoreLabel: {
     fontSize: 12,
-    color: theme.colors.warning || '#d97706',
-    marginBottom: 4,
+    color: theme.colors.warning,
+    marginBottom: 8,
+    fontWeight: '600' as const,
   } as const,
   scoreValue: {
     fontSize: 32,
     fontWeight: '700' as const,
-    color: theme.colors.warning || '#d97706',
+    color: theme.colors.warning,
+    lineHeight: 40,
   } as const,
   eventsSection: {
     marginTop: 20,
@@ -224,6 +226,8 @@ export const TripReviewScreen: React.FC = () => {
   };
 
   const handleCancel = () => {
+    setShowValidation(false);
+    // Navigate back to previous screen
     router.back();
   };
 

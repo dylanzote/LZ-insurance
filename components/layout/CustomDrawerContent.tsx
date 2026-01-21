@@ -2,10 +2,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useSafeArea } from '@/hooks/useSafeArea';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFeatureFlags, useBrandingConfig } from '@/core/config/store';
+import { APP_CONFIG } from '@/core/constants/app';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { LogOut } from 'lucide-react-native';
 
 const useStyles = createThemedStyles((theme) => ({
   container: {
@@ -71,41 +74,60 @@ const useStyles = createThemedStyles((theme) => ({
     color: theme.colors.textSecondary,
     textAlign: 'center' as const,
   } as const,
+  logoutButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    backgroundColor: theme.colors.error + '15',
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.error,
+  } as const,
+  logoutButtonText: {
+    fontSize: 16,
+    color: theme.colors.error,
+    fontWeight: '600' as const,
+    marginLeft: 12,
+  } as const,
 }));
 
-const menuSections = [
+// Menu sections will be filtered based on feature flags in the component
+const baseMenuSections = [
   {
     title: 'main',
     items: [
-      { key: 'home', icon: '🏠', label: 'home', route: '/(tabs)' },
-      { key: 'advantages', icon: '⭐', label: 'lzAdvantage', route: '/(tabs)/driving' },
+      { key: 'home', icon: '🏠', label: 'home', route: '/(app)/(tabs)', feature: null as const },
+      { key: 'advantages', icon: '⭐', label: 'lzAdvantage', route: '/(app)/(tabs)/driving', feature: 'drivingScore' as const },
     ],
   },
   {
     title: 'insurance',
     items: [
-      { key: 'startClaim', icon: '🛡️', label: 'startClaim', route: '/claims/new' },
-      { key: 'trackClaim', icon: '📊', label: 'trackClaim', route: '/claims/trackClaim' },
-      { key: 'viewCoverage', icon: '👁️', label: 'viewCoverage', route: '/coverage' },
-      { key: 'managePolicies', icon: '📄', label: 'managePolicies', route: '/policies/viewPolicies' },
-      { key: 'viewBilling', icon: '💰', label: 'viewBilling', route: '/billing' },
-      { key: 'getQuote', icon: '💬', label: 'getQuote', route: '/quotes' },
+      { key: 'startClaim', icon: '🛡️', label: 'startClaim', route: '/(app)/claims/new', feature: null as const },
+      { key: 'trackClaim', icon: '📊', label: 'trackClaim', route: '/(app)/claims/trackClaim', feature: null as const },
+      { key: 'viewCoverage', icon: '👁️', label: 'viewCoverage', route: '/(app)/coverage', feature: null as const },
+      { key: 'managePolicies', icon: '📄', label: 'managePolicies', route: '/(app)/policies/viewPolicies', feature: null as const },
+      { key: 'viewBilling', icon: '💰', label: 'viewBilling', route: '/(app)/billing', feature: null as const },
+      { key: 'getQuote', icon: '💬', label: 'getQuote', route: '/(app)/quotes', feature: null as const },
     ],
   },
   {
     title: 'support',
     items: [
-      { key: 'faqs', icon: '❓', label: 'faqs', route: '/support/faqs' },
-      { key: 'contact', icon: '📞', label: 'contact', route: '/support/contact' },
+      { key: 'faqs', icon: '❓', label: 'faqs', route: '/(app)/support/faqs', feature: null as const },
+      { key: 'contact', icon: '📞', label: 'contact', route: '/(app)/support/contact', feature: null as const },
+      { key: 'chat', icon: '💬', label: 'chat', route: '/(app)/chat', feature: 'chatSupport' as const },
     ],
   },
   {
     title: 'account',
     items: [
-      { key: 'profile', icon: '👤', label: 'myProfile', route: '/(tabs)/profile' },
-      { key: 'settings', icon: '⚙️', label: 'settings', route: '/settings' },
-      { key: 'feedback', icon: '💬', label: 'giveFeedback', route: '/feedback' },
-      { key: 'privacy', icon: '🔒', label: 'privacySecurity', route: '/privacy' },
+      { key: 'profile', icon: '👤', label: 'myProfile', route: '/(app)/(tabs)/profile', feature: null as const },
+      { key: 'settings', icon: '⚙️', label: 'settings', route: '/(app)/settings', feature: null as const },
+      { key: 'feedback', icon: '💬', label: 'giveFeedback', route: '/(app)/feedback', feature: 'feedback' as const },
+      { key: 'privacy', icon: '🔒', label: 'privacySecurity', route: '/(app)/privacy', feature: null as const },
     ],
   },
 ];
@@ -113,9 +135,20 @@ const menuSections = [
 export default function CustomDrawerContent(props: DrawerContentComponentProps) {
   const styles = useStyles();
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { top } = useSafeArea();
   const router = useRouter();
+  const features = useFeatureFlags();
+  const branding = useBrandingConfig();
+
+  // Filter menu sections based on feature flags
+  const menuSections = baseMenuSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      if (!item.feature) return true;
+      return features[item.feature];
+    }),
+  })).filter(section => section.items.length > 0);
 
   const currentRoute = props.state.routes[props.state.index]?.name;
   
@@ -155,7 +188,7 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
     <View style={styles.container}>
       {/* Header with safe area padding */}
       <View style={[styles.header, { paddingTop: top + 20 }]}>
-        <Text style={styles.headerTitle}>LZ Insurance</Text>
+        <Text style={styles.headerTitle}>{branding.appName}</Text>
         <Text style={styles.headerSubtitle}>
           {t('drawer.welcome')}, {user?.firstName}!
         </Text>
@@ -211,10 +244,39 @@ export default function CustomDrawerContent(props: DrawerContentComponentProps) 
         ))}
       </ScrollView>
 
-      {/* Footer */}
+      {/* Logout Button */}
       <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={() => {
+            Alert.alert(
+              t('auth.confirmLogout'),
+              t('auth.confirmLogoutMessage'),
+              [
+                {
+                  text: t('common.cancel'),
+                  style: 'cancel',
+                },
+                {
+                  text: t('auth.logout'),
+                  style: 'destructive',
+                  onPress: () => {
+                    props.navigation.closeDrawer();
+                    logout();
+                    router.replace('/auth/login');
+                  },
+                },
+              ]
+            );
+          }}
+        >
+          <LogOut size={20} color={styles.logoutButtonText.color} />
+          <Text style={styles.logoutButtonText}>
+            {t('auth.logout')}
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.footerText}>
-          LZ Insurance v1.0.0
+          {branding.appName} {APP_CONFIG.version}
         </Text>
       </View>
     </View>

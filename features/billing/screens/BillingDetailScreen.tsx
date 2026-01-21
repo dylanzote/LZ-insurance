@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { billingAPI } from '@/services/api/endpoints';
 import { usePaymentMethods } from '../hooks/usePaymentMethods';
@@ -118,7 +119,7 @@ const useStyles = createThemedStyles((theme) => ({
 
 export const BillingDetailScreen: React.FC = () => {
   const styles = useStyles();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -145,22 +146,7 @@ export const BillingDetailScreen: React.FC = () => {
     }
   }, [id]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const formatLocale = locale === 'fr' ? 'fr-FR' : 'en-US';
-    return date.toLocaleDateString(formatLocale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const { formatCurrency, formatDate } = useFormatting();
 
   const handlePay = async () => {
     if (!invoice) return;
@@ -174,7 +160,7 @@ export const BillingDetailScreen: React.FC = () => {
           { text: t('common.cancel'), style: 'cancel' },
           {
             text: t('billing.addPaymentMethod'),
-            onPress: () => router.push('/billing/payment-methods?add=true' as any),
+            onPress: () => router.push('/(app)/billing/payment-methods?add=true' as any),
           },
         ]
       );

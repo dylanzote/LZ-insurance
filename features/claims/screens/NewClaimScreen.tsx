@@ -345,7 +345,7 @@ const useStyles = createThemedStyles((theme) => ({
     height: 32,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -826,7 +826,7 @@ export const NewClaimScreen: React.FC = () => {
             text: t('claims.submitSuccess.viewClaims'),
             onPress: () => {
               // Navigate to claims list
-              router.push('/claims/trackClaim' as any);
+              router.push('/(app)/claims/trackClaim' as any);
             },
           },
         ]

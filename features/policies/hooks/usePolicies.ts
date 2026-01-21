@@ -1,21 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Policy } from '../types';
 import { policiesAPI } from '@/services/api/endpoints';
+import { useBusinessConfig } from '@/core/config/store';
 
 export const usePolicies = () => {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const business = useBusinessConfig();
 
   const fetchPolicies = async () => {
     try {
       setLoading(true);
       const response = await policiesAPI.getAll();
       
-      // Add renewal logic to policies
+      // Add renewal logic to policies using business config
+      const renewalThreshold = business.paymentGracePeriod || 30;
       const policiesWithRenewal = response.data.map((policy: Policy) => ({
         ...policy,
-        canRenew: policy.status === 'active' && policy.daysUntilExpiry < 30,
+        canRenew: policy.status === 'active' && policy.daysUntilExpiry < renewalThreshold,
         daysUntilExpiry: calculateDaysUntilExpiry(policy.endDate),
       }));
       

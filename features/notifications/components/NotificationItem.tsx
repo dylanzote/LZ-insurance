@@ -74,28 +74,28 @@ const getTypeStyles = (type: string, theme: any) => {
   switch (type) {
     case 'claim_update':
       return {
-        backgroundColor: '#dbeafe',
-        color: '#1d4ed8',
+        backgroundColor: theme.colors.info + '20',
+        color: theme.colors.info,
       };
     case 'policy_reminder':
       return {
-        backgroundColor: '#fef3c7',
-        color: '#d97706',
+        backgroundColor: theme.colors.warning + '20',
+        color: theme.colors.warning,
       };
     case 'payment':
       return {
-        backgroundColor: '#dcfce7',
-        color: '#16a34a',
+        backgroundColor: theme.colors.success + '20',
+        color: theme.colors.success,
       };
     case 'system':
       return {
-        backgroundColor: '#e5e7eb',
-        color: '#374151',
+        backgroundColor: theme.colors.gray200,
+        color: theme.colors.gray700,
       };
     case 'promotion':
       return {
-        backgroundColor: '#fae8ff',
-        color: '#a855f7',
+        backgroundColor: theme.colors.primaryLight,
+        color: theme.colors.primary,
       };
     default:
       return {

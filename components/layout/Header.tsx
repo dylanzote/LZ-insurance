@@ -2,11 +2,11 @@ import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useNotifications } from '@/features/notifications';
 import { useSafeArea } from '@/hooks/useSafeArea';
-import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Bell, Menu } from 'lucide-react-native';
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { useDrawerNavigation } from '@/hooks/useDrawerNavigation';
 
 interface HeaderProps {
   title?: string;
@@ -69,16 +69,16 @@ export const Header: React.FC<HeaderProps> = ({
   const styles = useStyles();
   const { theme } = useTheme();
   const router = useRouter();
-  const navigation = useNavigation();
   const { unreadCount } = useNotifications();
   const { top } = useSafeArea();
+  const { toggleDrawer } = useDrawerNavigation();
 
   const handleDrawerToggle = () => {
-    navigation.dispatch(DrawerActions.toggleDrawer());
+    toggleDrawer();
   };
 
   const handleNotificationsPress = () => {
-    router.push('/notifications');
+    router.push('/(app)/notifications');
   };
 
   return (

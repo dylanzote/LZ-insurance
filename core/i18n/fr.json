@@ -18,11 +18,22 @@
     "close": "Fermer",
     "add": "Ajouter",
     "continue": "Continuer",
-    "update": "Mettre à jour"
+    "update": "Mettre à jour",
+    "or": "OU",
+    "featureUnavailable": "Cette fonctionnalité n'est actuellement pas disponible."
   },
   "auth": {
     "login": "Connexion",
     "logout": "Déconnexion",
+    "confirmLogout": "Confirmer la déconnexion",
+    "confirmLogoutMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "loggingOut": "Déconnexion en cours...",
+    "loginWithFaceID": "Se connecter avec Face ID",
+    "loginWithBiometric": "Se connecter avec %{type}",
+    "biometricNotAvailable": "L'authentification biométrique n'est pas disponible",
+    "biometricNotEnrolled": "Veuillez activer Face ID/Touch ID dans les paramètres de votre appareil",
+    "biometricError": "L'authentification biométrique a échoué. Veuillez réessayer.",
+    "biometricCancelled": "L'authentification a été annulée",
     "register": "S'inscrire",
     "email": "E-mail",
     "password": "Mot de passe",
@@ -39,12 +50,20 @@
     "confirmPassword": "Confirmer le mot de passe",
     "phoneNumber": "Numéro de téléphone",
     "phoneNumberOptional": "Numéro de téléphone (Optionnel)",
+    "dateOfBirth": "Date de naissance",
+    "selectDate": "Sélectionnez votre date de naissance",
+    "gender": "Genre",
+    "selectGender": "Sélectionner le genre",
+    "town": "Ville",
+    "address": "Adresse",
     "enterEmail": "Entrez votre e-mail",
     "enterPassword": "Entrez votre mot de passe",
     "confirmYourPassword": "Confirmez votre mot de passe",
     "enterFirstName": "Jean",
     "enterLastName": "Dupont",
     "enterPhoneNumber": "+33 1 23 45 67 89",
+    "enterTown": "Paris",
+    "enterAddress": "123 Rue Principale",
     "termsAgreement": "En créant un compte, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité",
     "signIn": "Se connecter",
     "signUp": "S'inscrire",
@@ -58,7 +77,20 @@
     "passwordResetInstructions": "Cliquez sur le lien dans l'e-mail pour réinitialiser votre mot de passe. Si vous ne le voyez pas, vérifiez votre dossier spam.",
     "checkEmail": "Vérifier l'e-mail",
     "backToLogin": "Retour à la connexion",
-    "resendEmail": "Renvoyer l'e-mail"
+    "resendEmail": "Renvoyer l'e-mail",
+    "emailNotVerified": "E-mail Non Vérifié",
+    "mustVerifyEmailToUseApp": "Vous devez vérifier votre adresse e-mail pour utiliser l'application. Nous avons envoyé un e-mail de vérification dans votre boîte de réception.",
+    "pleaseVerifyEmailToAccess": "Veuillez vérifier votre e-mail pour accéder à toutes les fonctionnalités et activer l'authentification à deux facteurs.",
+    "checkInboxForVerification": "Consultez votre boîte de réception et cliquez sur le lien de vérification. N'oubliez pas de vérifier votre dossier spam.",
+    "resendVerificationEmail": "Renvoyer l'E-mail de Vérification",
+    "sendingVerificationEmail": "Envoi en cours...",
+    "verificationEmailSent": "E-mail de vérification envoyé ! Veuillez consulter votre boîte de réception.",
+    "verificationEmailFailed": "Échec de l'envoi de l'e-mail de vérification. Veuillez réessayer.",
+    "verifyLater": "Je Vérifierai Plus Tard",
+    "emailVerificationRequired": "La vérification de l'e-mail est requise pour continuer à utiliser l'application.",
+    "pleaseWaitBeforeResending": "Veuillez attendre {{seconds}} secondes avant de demander un autre e-mail.",
+    "emailMustBeVerifiedFor2FA": "Votre e-mail doit être vérifié avant de pouvoir activer l'authentification à deux facteurs.",
+    "verifyEmailFirst": "Veuillez d'abord vérifier votre adresse e-mail."
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -200,7 +232,16 @@
     "agency": "Agence",
     "nextPayment": "Prochain paiement",
     "paymentDate": "Date de paiement",
-    "startClaim": "DÉPOSER UNE RÉCLAMATION"
+    "startClaim": "DÉPOSER UNE RÉCLAMATION",
+    "renewal": {
+      "title": "Renouveler la police",
+      "confirmTitle": "Renouveler la police",
+      "confirmMessage": "Êtes-vous sûr de vouloir renouveler votre police %{type} ?",
+      "renew": "Renouveler",
+      "expired": "Votre police a expiré. Renouvelez maintenant pour maintenir la couverture.",
+      "expiresSoon": "Votre police expire dans %{days} jours. Renouvelez maintenant pour éviter une interruption de couverture.",
+      "expiresIn": "Votre police expire dans %{days} jours. Envisagez de renouveler tôt."
+    }
   },
   "claims": {
     "title": "Réclamations",
@@ -354,8 +395,11 @@
     "phoneNumber": "Numéro de Téléphone",
     "address": "Adresse",
     "dateOfBirth": "Date de Naissance",
+    "gender": "Genre",
     "userId": "ID Utilisateur",
     "status": "Statut",
+    "verified": "Vérifié",
+    "notVerified": "Non Vérifié",
     "active": "Actif",
     "saveChanges": "Enregistrer les Modifications",
     "cancel": "Annuler",
@@ -443,7 +487,8 @@
       "myProfile": "Mon profil",
       "settings": "Paramètres",
       "giveFeedback": "Donner son avis",
-      "privacySecurity": "Confidentialité, Sécurité & Légal"
+      "privacySecurity": "Confidentialité, Sécurité & Légal",
+      "chat": "Support par chat"
     }
   },
   "errors": {

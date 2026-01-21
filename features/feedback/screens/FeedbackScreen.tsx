@@ -108,7 +108,7 @@ const useStyles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

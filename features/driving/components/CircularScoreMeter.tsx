@@ -47,10 +47,10 @@ export const CircularScoreMeter: React.FC<CircularScoreMeterProps> = ({
   const { theme } = useTheme();
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return theme.colors.success || '#16a34a';
-    if (score >= 80) return '#3b82f6';
-    if (score >= 70) return theme.colors.warning || '#d97706';
-    return theme.colors.error || '#dc2626';
+    if (score >= 90) return theme.colors.success;
+    if (score >= 80) return theme.colors.info;
+    if (score >= 70) return theme.colors.warning;
+    return theme.colors.error;
   };
 
   const getScoreLevel = (score: number) => {

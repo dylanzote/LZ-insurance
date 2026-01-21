@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "LZ-Insurrance",
-    "slug": "LZ-Insurrance",
+    "slug": "lz-insurrance",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,7 +19,9 @@
           "location",
           "fetch",
           "remote-notification"
-        ]
+        ],
+        "NSUserNotificationsUsageDescription": "LZ Insurance needs permission to send you notifications about your policies, claims, payments, and important updates.",
+        "NSFaceIDUsageDescription": "LZ Insurance uses Face ID to provide secure and convenient login to your account."
       }
     },
     "android": {
@@ -34,10 +36,16 @@
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION"
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.WAKE_LOCK",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "package": "com.yourcompany.lzinsurance",
-      "softwareKeyboardLayoutMode": "adjustResize"
+      "googleServicesFile": "./google-services.json",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "static",
@@ -67,11 +75,26 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0066CC",
+          "mode": "production"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "375dbc70-f4a5-4be8-adfc-c112dd045766"
+      }
+    },
+    "owner": "lz-inzurance"
   }
 }

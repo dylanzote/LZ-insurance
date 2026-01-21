@@ -4,7 +4,7 @@ import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
-import { profileAPI } from '@/services/api/endpoints';
+import { userProfileAPI } from '@/services/api/endpoints';
 import { CheckCircle2, Mail, Phone, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
@@ -229,13 +229,38 @@ export const TwoStepVerificationModal: React.FC<TwoStepVerificationModalProps> =
     setIsLoading(true);
     try {
       // Send verification code
-      await profileAPI.sendVerificationCode(methodType);
+      await userProfileAPI.twoFactor.sendVerificationCode(methodType.toUpperCase() as 'EMAIL' | 'SMS');
       setStep('verify');
-    } catch (error) {
-      Alert.alert(
-        t('common.error'),
-        t('profile.verificationCodeError')
-      );
+    } catch (error: any) {
+      console.error('Failed to send 2FA code:', error);
+      
+      // Check if error is due to email not verified
+      const errorMessage = error.response?.data?.message || error.message || '';
+      const isEmailNotVerified = 
+        errorMessage.toLowerCase().includes('email not verified') ||
+        errorMessage.toLowerCase().includes('email must be verified') ||
+        errorMessage.toLowerCase().includes('verify your email');
+
+      if (isEmailNotVerified && methodType === 'email') {
+        Alert.alert(
+          t('auth.emailNotVerified'),
+          t('auth.emailMustBeVerifiedFor2FA'),
+          [
+            {
+              text: t('common.ok'),
+              onPress: () => {
+                // Close the modal so user can see the verification banner
+                onClose();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          t('common.error'),
+          errorMessage || t('profile.verificationCodeError')
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -307,7 +332,7 @@ export const TwoStepVerificationModal: React.FC<TwoStepVerificationModalProps> =
           onPress: async () => {
             setIsLoading(true);
             try {
-              await profileAPI.disableTwoStepVerification();
+              await userProfileAPI.twoFactor.disable();
               onToggle(false, null);
               handleClose();
             } catch (error) {
@@ -329,17 +354,39 @@ export const TwoStepVerificationModal: React.FC<TwoStepVerificationModalProps> =
     
     setIsResending(true);
     try {
-      await profileAPI.sendVerificationCode(selectedMethod);
+      await userProfileAPI.twoFactor.sendVerificationCode(selectedMethod.toUpperCase() as 'EMAIL' | 'SMS');
       setResendCooldown(60);
       Alert.alert(
         t('common.success'),
         t('profile.codeResent')
       );
-    } catch (error) {
-      Alert.alert(
-        t('common.error'),
-        t('profile.resendError')
-      );
+    } catch (error: any) {
+      console.error('Failed to resend 2FA code:', error);
+      
+      // Check if error is due to email not verified
+      const errorMessage = error.response?.data?.message || error.message || '';
+      const isEmailNotVerified = 
+        errorMessage.toLowerCase().includes('email not verified') ||
+        errorMessage.toLowerCase().includes('email must be verified') ||
+        errorMessage.toLowerCase().includes('verify your email');
+
+      if (isEmailNotVerified && selectedMethod === 'email') {
+        Alert.alert(
+          t('auth.emailNotVerified'),
+          t('auth.verifyEmailFirst'),
+          [
+            {
+              text: t('common.ok'),
+              onPress: () => onClose(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          t('common.error'),
+          errorMessage || t('profile.resendError')
+        );
+      }
     } finally {
       setIsResending(false);
     }

@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import { Info } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ScrollView, Text as RNText, TouchableOpacity, View } from 'react-native';
@@ -22,7 +23,7 @@ const useStyles = createThemedStyles((theme) => ({
     borderRadius: theme.radii.lg,
     padding: theme.spacing.lg,
     marginVertical: theme.spacing.sm,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -111,6 +112,7 @@ export const InsuranceProductCard: React.FC<InsuranceProductCardProps> = ({
   const styles = useStyles();
   const { t } = useTranslation();
   const { theme } = useTheme();
+  const { formatCurrency } = useFormatting();
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [infoModalTitle, setInfoModalTitle] = useState('');
   const [infoModalContent, setInfoModalContent] = useState<React.ReactNode>(null);
@@ -183,12 +185,12 @@ export const InsuranceProductCard: React.FC<InsuranceProductCardProps> = ({
                       </Text>
                       {coverage.limit && (
                         <Text variant="caption" color={theme.colors.textSecondary}>
-                          {t('quotes.form.limit')}: ${coverage.limit.toLocaleString()}
+                          {t('quotes.form.limit')}: {formatCurrency(coverage.limit)}
                         </Text>
                       )}
                       {coverage.deductible && (
                         <Text variant="caption" color={theme.colors.textSecondary}>
-                          {t('quotes.form.deductible')}: ${coverage.deductible.toLocaleString()}
+                          {t('quotes.form.deductible')}: {formatCurrency(coverage.deductible)}
                         </Text>
                       )}
                       {coverage.included && (
@@ -214,10 +216,10 @@ export const InsuranceProductCard: React.FC<InsuranceProductCardProps> = ({
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
           <View>
             <Text variant="h2" weight="bold" color={theme.colors.primary}>
-              ${product.monthlyPremium.toFixed(2)}
+              {formatCurrency(product.monthlyPremium)}
             </Text>
             <Text variant="caption" color={theme.colors.textSecondary}>
-              /{t('marketplace.month')} • ${product.annualPremium.toFixed(2)}/{t('marketplace.year')}
+              /{t('marketplace.month')} • {formatCurrency(product.annualPremium)}/{t('marketplace.year')}
             </Text>
           </View>
           

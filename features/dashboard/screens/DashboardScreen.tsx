@@ -4,9 +4,14 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFeatureFlags } from '@/core/config/store';
+import { getActionColor, getActionGradient } from '@/core/theme/colors';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import type { Theme } from '@/core/theme/types';
+import { useTheme } from '@/core/theme/useTheme';
 import { useDrivingScore } from '@/features/driving';
 import { usePolicies } from '@/features/policies';
+import { useFormatting } from '@/hooks/useFormatting';
 import { useTranslation } from '@/hooks/useTranslation';
 import { tripTracker } from '@/services/location/tripTracker';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,12 +35,14 @@ const useStyles = createThemedStyles((theme) => ({
   greeting: {
     marginTop: 8,
     marginBottom: 24,
+    paddingTop: 8,
   } as const,
   greetingText: {
     fontSize: 28,
     fontWeight: '700' as const,
     color: theme.colors.text,
     marginBottom: 8,
+    lineHeight: 36,
   } as const,
   greetingSubtext: {
     fontSize: 16,
@@ -174,13 +181,13 @@ const useStyles = createThemedStyles((theme) => ({
     borderRadius: 16,
     alignItems: 'center',
     marginRight: 12,
-    shadowColor: '#000000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: theme.colors.white + '1A',
   } as const,
   actionIconContainer: {
     width: 52,
@@ -189,7 +196,7 @@ const useStyles = createThemedStyles((theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -209,7 +216,7 @@ const useStyles = createThemedStyles((theme) => ({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    shadowColor: '#000000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -279,23 +286,26 @@ const getPolicyIcon = (type: string) => {
   }
 };
 
-const getPolicyColor = (type: string) => {
+const getPolicyColor = (type: string, theme: Theme) => {
   switch (type.toLowerCase()) {
-    case 'auto': return '#FF6B6B';
-    case 'home': return '#4ECDC4';
-    case 'life': return '#45B7D1';
-    default: return '#96CEB4';
+    case 'auto': return getActionColor('auto', theme);
+    case 'home': return getActionColor('home', theme);
+    case 'life': return getActionColor('life', theme);
+    default: return getActionColor('health', theme);
   }
 };
 
 export const DashboardScreen: React.FC = () => {
+  const { formatCurrency } = useFormatting();
   const styles = useStyles();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   const { stats, recentActivity, loading, error, refetch } = useDashboard();
   const { score: drivingScore, tripHistory } = useDrivingScore();
   const { policies } = usePolicies();
+  const features = useFeatureFlags();
   
   // Filter only active policies for display
   const activePolicies = React.useMemo(() => {
@@ -369,38 +379,39 @@ export const DashboardScreen: React.FC = () => {
     {
       title: t('dashboard.quickActions.startClaim'),
       icon: 'document-text' as const,
-      route: '/claims/new',
-      color: '#FF6B6B',
-      gradient: ['#FF6B6B', '#FF8E8E'],
+      route: '/(app)/claims/new',
+      color: getActionColor('claim', theme),
+      gradient: getActionGradient('claim'),
     },
     {
       title: t('dashboard.quickActions.viewCoverage'),
       icon: 'shield-checkmark' as const,
-      route: '/coverage',
-      color: '#4ECDC4',
-      gradient: ['#4ECDC4', '#67D7D0'],
+      route: '/(app)/coverage',
+      color: getActionColor('coverage', theme),
+      gradient: getActionGradient('coverage'),
     },
     {
       title: t('dashboard.quickActions.proofInsurance'),
       icon: 'card' as const,
       route: '/documents',
-      color: '#45B7D1',
-      gradient: ['#45B7D1', '#5FC1D9'],
+      color: getActionColor('document', theme),
+      gradient: getActionGradient('document'),
     },
     {
       title: t('dashboard.quickActions.billing'),
       icon: 'cash' as const,
-      route: '/billing',
-      color: '#96CEB4',
-      gradient: ['#96CEB4', '#A9D8C1'],
+      route: '/(app)/billing',
+      color: getActionColor('billing', theme),
+      gradient: getActionGradient('billing'),
     },
-    {
-      title: 'Driving Score',
+    // Only show driving score if feature is enabled
+    ...(features.drivingScore ? [{
+      title: t('dashboard.drivingScore'),
       icon: 'speedometer' as const,
-      route: '/driving',
-      color: '#6C5CE7',
-      gradient: ['#6C5CE7', '#8174EA'],
-    },
+      route: '/(app)/(tabs)/driving',
+      color: getActionColor('driving', theme),
+      gradient: getActionGradient('driving'),
+    }] : []),
   ];
 
   // Support Actions Data
@@ -409,20 +420,21 @@ export const DashboardScreen: React.FC = () => {
       title: t('dashboard.support.contactUs'),
       icon: 'mail' as const,
       route: '/support/contact',
-      color: '#6C5CE7',
+      color: getActionColor('contact', theme),
     },
     {
       title: t('dashboard.support.faqs'),
       icon: 'help-circle' as const,
       route: '/support/faqs',
-      color: '#FD79A8',
+      color: getActionColor('faq', theme),
     },
-    {
+    // Only show chat if feature is enabled
+    ...(features.chatSupport ? [{
       title: t('dashboard.support.chat'),
       icon: 'chatbubbles' as const,
       route: '/chat',
-      color: '#00B894',
-    },
+      color: getActionColor('chat', theme),
+    }] : []),
   ];
 
   if (loading && !stats) {
@@ -501,7 +513,7 @@ export const DashboardScreen: React.FC = () => {
               />
               <StatCard
                 title={t('dashboard.totalCoverage')}
-                value={`$${stats.totalCoverage.toLocaleString()}`}
+                value={formatCurrency(stats.totalCoverage)}
                 subtitle={t('dashboard.protected')}
                 style={{ marginBottom: 16, width: '48%' }}
               />
@@ -509,13 +521,13 @@ export const DashboardScreen: React.FC = () => {
           )}
 
           {/* Driving Score Card */}
-          {drivingScore && (
+          {features.drivingScore && drivingScore && (
             <View style={styles.section}>
               <DrivingScoreCard
                 score={drivingScore.score}
                 discount={calculateDiscount(drivingScore.score)}
                 tripsToReview={tripsToReview}
-                onPress={() => router.push('/driving')}
+                onPress={() => router.push('/(app)/(tabs)/driving')}
               />
             </View>
           )}
@@ -563,7 +575,7 @@ export const DashboardScreen: React.FC = () => {
                 <Text style={styles.sectionTitle}>
                   {t('dashboard.myCoverage')}
                 </Text>
-                <TouchableOpacity onPress={() => router.push('/coverage' as any)}>
+                <TouchableOpacity onPress={() => router.push('/(app)/coverage' as any)}>
                   <Text style={styles.viewAll}>
                     {t('common.viewAll')}
                   </Text>

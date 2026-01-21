@@ -49,7 +49,7 @@ const useStyles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.primary,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -110,7 +110,7 @@ export const QuotesListScreen: React.FC = () => {
   };
 
   const handleNewQuote = () => {
-    router.push('/quotes/new' as any);
+    router.push('/(app)/quotes/new' as any);
   };
 
   if (loading && quotes.length === 0) {

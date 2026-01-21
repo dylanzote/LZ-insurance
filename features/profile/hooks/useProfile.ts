@@ -1,42 +1,32 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { profileAPI } from '@/services/api/endpoints';
+import type { UserResponse } from '@/core/types/backend';
+import { userProfileAPI } from '@/services/api/endpoints';
 import { useEffect, useState } from 'react';
-import type { UserProfile } from '../types';
 
 export const useProfile = () => {
   const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserResponse | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch profile data
+  // Fetch profile data from real API
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setIsLoadingProfile(true);
-        const profileData = await profileAPI.getProfile();
-        setProfile({
-          id: profileData.data.id,
-          email: profileData.data.email,
-          firstName: profileData.data.firstName,
-          lastName: profileData.data.lastName,
-          phone: profileData.data.phoneNumber || profileData.data.phone,
-          address: profileData.data.address,
-          dateOfBirth: profileData.data.dateOfBirth,
-          maritalStatus: profileData.data.maritalStatus,
-          gender: profileData.data.gender,
-        });
-      } catch (error) {
+        setError(null);
+        
+        // Use real API to get profile
+        const profileData = await userProfileAPI.getProfile();
+        setProfile(profileData);
+      } catch (error: any) {
         console.error('Failed to fetch profile:', error);
-        // Fallback to user data from auth
+        setError(error?.message || 'Failed to load profile');
+        
+        // Fallback to user data from auth store
         if (user) {
-          setProfile({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phone: user.phoneNumber,
-          });
+          setProfile(user);
         }
       } finally {
         setIsLoadingProfile(false);
@@ -51,24 +41,45 @@ export const useProfile = () => {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       await logout();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Logout error:', error);
+      setError(error?.message || 'Logout failed');
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateProfile = (updatedProfile: UserProfile) => {
+  const refreshProfile = async () => {
+    try {
+      setIsLoadingProfile(true);
+      setError(null);
+      const profileData = await userProfileAPI.getProfile();
+      setProfile(profileData);
+      return profileData;
+    } catch (error: any) {
+      console.error('Failed to refresh profile:', error);
+      setError(error?.message || 'Failed to refresh profile');
+      throw error;
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const updateProfile = (updatedProfile: UserResponse) => {
     setProfile(updatedProfile);
   };
 
   return {
-    user, // User from auth context (fallback)
-    profile, // Profile from API (primary source)
+    user: profile || user, // Primary: profile from API, Fallback: user from auth
+    profile,
     isLoading,
     isLoadingProfile,
+    error,
     handleLogout,
     updateProfile,
+    refreshProfile,
   };
 };

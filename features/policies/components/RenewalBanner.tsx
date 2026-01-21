@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Alert } from 'react-native';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useBusinessConfig } from '@/core/config/store';
 import { Button } from '@/components/ui/Button';
 import { Policy } from '../types';
 
@@ -44,15 +45,16 @@ export const RenewalBanner: React.FC<RenewalBannerProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const business = useBusinessConfig();
 
   const handleRenew = () => {
     Alert.alert(
-      'Renew Policy',
-      `Are you sure you want to renew your ${policy.type} policy?`,
+      t('policies.renewal.confirmTitle'),
+      t('policies.renewal.confirmMessage', { type: policy.type }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Renew', 
+          text: t('policies.renewal.renew'), 
           style: 'default',
           onPress: () => onRenew(policy.id)
         },
@@ -60,17 +62,18 @@ export const RenewalBanner: React.FC<RenewalBannerProps> = ({
     );
   };
 
-  if (!policy.canRenew && policy.daysUntilExpiry > 30) {
+  const renewalThreshold = business.paymentGracePeriod || 30;
+  if (!policy.canRenew && policy.daysUntilExpiry > renewalThreshold) {
     return null;
   }
 
   const getMessage = () => {
     if (policy.daysUntilExpiry <= 0) {
-      return 'Your policy has expired. Renew now to maintain coverage.';
+      return t('policies.renewal.expired');
     } else if (policy.daysUntilExpiry <= 7) {
-      return `Your policy expires in ${policy.daysUntilExpiry} days. Renew now to avoid lapse in coverage.`;
+      return t('policies.renewal.expiresSoon', { days: policy.daysUntilExpiry });
     } else {
-      return `Your policy expires in ${policy.daysUntilExpiry} days. Consider renewing early.`;
+      return t('policies.renewal.expiresIn', { days: policy.daysUntilExpiry });
     }
   };
 

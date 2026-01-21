@@ -1,4 +1,5 @@
 import { Header } from '@/components/layout/Header';
+import { EmailVerificationBanner } from '@/components/shared/EmailVerificationBanner';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -10,7 +11,6 @@ import {
   Calendar,
   ChevronRight,
   Edit2,
-  Heart,
   Lock,
   Mail,
   MapPin,
@@ -25,7 +25,6 @@ import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { EditProfileModal } from '../components/EditProfileModal';
 import { TwoStepVerificationModal } from '../components/TwoStepVerificationModal';
 import { useProfile } from '../hooks/useProfile';
-import type { UserProfile } from '../types';
 
 const { width } = Dimensions.get('window');
 
@@ -60,7 +59,7 @@ const useStyles = createThemedStyles((theme) => ({
     alignItems: 'center' as const,
     borderWidth: 4,
     borderColor: theme.colors.white,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -89,7 +88,7 @@ const useStyles = createThemedStyles((theme) => ({
     alignItems: 'center' as const,
     borderWidth: 3,
     borderColor: theme.colors.white,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -232,11 +231,35 @@ export const ProfileScreen: React.FC = () => {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
+    
+    // Backend returns date in dd/MM/yyyy format (e.g., "15/12/1990")
+    // We need to parse it correctly
+    const parts = dateString.split('/');
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      // Create date from parts (month is 0-indexed in JS)
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      }
+    }
+    
+    // Fallback: try parsing as is
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    }
+    
+    return dateString; // Return as is if parsing fails
   };
 
   if (isLoadingProfile) {
@@ -248,20 +271,8 @@ export const ProfileScreen: React.FC = () => {
     );
   }
 
-  // Use profile data if available, otherwise fallback to user from auth context
-  // This ensures we always have data and makes it easy to integrate with real APIs
-  // In production, profileAPI.getProfile() will be replaced with real API call
-  const displayUser: UserProfile | null = profile || (user ? {
-    id: user.id,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    phone: user.phoneNumber,
-    address: undefined, // Not available in auth user, will be fetched from profile API
-    dateOfBirth: undefined, // Not available in auth user, will be fetched from profile API
-    maritalStatus: undefined, // Not available in auth user, will be fetched from profile API
-    gender: undefined, // Not available in auth user, will be fetched from profile API
-  } : null);
+  // Use profile data from backend (UserResponse type)
+  const displayUser = profile || user;
 
   // If no user data at all, show error state
   if (!displayUser) {
@@ -311,6 +322,11 @@ export const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* Email Verification Banner (if not verified) */}
+        {!displayUser.emailConfirmed && (
+          <EmailVerificationBanner blocking={false} />
+        )}
+
         {/* Personal Information */}
         <View style={styles.section}>
           <Text variant="h3" weight="bold" style={styles.sectionTitle}>
@@ -347,9 +363,24 @@ export const ProfileScreen: React.FC = () => {
                 <Text style={styles.infoLabel}>
                   {t('profile.email')}
                 </Text>
-                <Text style={styles.infoValue}>
-                  {displayUser.email}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={styles.infoValue}>
+                    {displayUser.email}
+                  </Text>
+                  {displayUser.emailConfirmed ? (
+                    <Badge 
+                      label={t('profile.verified')} 
+                      variant="success"
+                      size="sm"
+                    />
+                  ) : (
+                    <Badge 
+                      label={t('profile.notVerified')} 
+                      variant="warning"
+                      size="sm"
+                    />
+                  )}
+                </View>
               </View>
             </View>
 
@@ -366,9 +397,9 @@ export const ProfileScreen: React.FC = () => {
                 <Text style={styles.infoLabel}>
                   {t('profile.phoneNumber')}
                 </Text>
-                {displayUser.phone ? (
+                {displayUser.phoneNumber ? (
                   <Text style={styles.infoValue}>
-                    {displayUser.phone}
+                    {displayUser.phoneNumber}
                   </Text>
                 ) : (
                   <Text style={styles.emptyValue}>
@@ -418,32 +449,6 @@ export const ProfileScreen: React.FC = () => {
               </View>
             )}
 
-            {/* Marital Status */}
-            <TouchableOpacity 
-              style={styles.infoItem}
-              onPress={() => setEditModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconWrapper}>
-                <Heart size={20} color={theme.colors.primary} />
-              </View>
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
-                  {t('quotes.form.maritalStatus')}
-                </Text>
-                {displayUser.maritalStatus ? (
-                  <Text style={styles.infoValue}>
-                    {t(`quotes.form.marital.${displayUser.maritalStatus}`)}
-                  </Text>
-                ) : (
-                  <Text style={styles.emptyValue}>
-                    {t('profile.notProvided')}
-                  </Text>
-                )}
-              </View>
-              <ChevronRight size={20} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-
             {/* Gender */}
             <TouchableOpacity 
               style={[styles.infoItem, styles.infoItemLast]}
@@ -455,11 +460,11 @@ export const ProfileScreen: React.FC = () => {
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>
-                  {t('quotes.form.gender')}
+                  {t('profile.gender')}
                 </Text>
                 {displayUser.gender ? (
                   <Text style={styles.infoValue}>
-                    {t(`quotes.form.genderOptions.${displayUser.gender}`)}
+                    {displayUser.gender === 'MALE' ? 'Male' : displayUser.gender === 'FEMALE' ? 'Female' : 'Other'}
                   </Text>
                 ) : (
                   <Text style={styles.emptyValue}>

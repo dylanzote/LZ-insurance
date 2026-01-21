@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "845505229084",
+    "project_id": "lz-insurance-6a0e2",
+    "storage_bucket": "lz-insurance-6a0e2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845505229084:android:e032872a9f4ea415090ad9",
+        "android_client_info": {
+          "package_name": "com.yourcompany.lzinsurance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBY8O2uwf2lb9Ry43JzdlTsH-N15kDF8xQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

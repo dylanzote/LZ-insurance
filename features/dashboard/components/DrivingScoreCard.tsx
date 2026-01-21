@@ -16,7 +16,7 @@ const useStyles = createThemedStyles((theme) => ({
     backgroundColor: theme.colors.card,
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: theme.colors.gray900,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

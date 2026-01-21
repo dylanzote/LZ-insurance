@@ -48,9 +48,18 @@ export const registerSchema = z.object({
     .min(1, getTranslatedMessage('errors.lastNameRequired'))
     .min(2, getTranslatedMessage('errors.lastNameMinLength')),
   email: emailSchema,
+  phoneNumber: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Please enter a valid phone number'),
   password: passwordSchema,
   confirmPassword: z.string().min(1, getTranslatedMessage('errors.confirmPasswordRequired')),
-  phoneNumber: z.string().optional(),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER'], {
+    errorMap: () => ({ message: 'Please select your gender' }),
+  }),
+  town: z.string().min(1, 'Town/City is required'),
+  address: z.string().min(1, 'Address is required'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: getTranslatedMessage('errors.confirmPasswordMismatch'),
   path: ['confirmPassword'],

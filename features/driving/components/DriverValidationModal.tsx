@@ -250,6 +250,7 @@ export const DriverValidationModal: React.FC<DriverValidationModalProps> = ({
       transparent
       animationType="fade"
       onRequestClose={handleCancel}
+      presentationStyle="overFullScreen"
     >
       <View style={styles.modalOverlay}>
         <Card variant="elevated" style={styles.modalContent}>

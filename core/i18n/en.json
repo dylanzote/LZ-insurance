@@ -18,11 +18,22 @@
     "add": "Add",
     "continue": "Continue",
     "back": "Back",
-    "update": "Update"
+    "update": "Update",
+    "or": "OR",
+    "featureUnavailable": "This feature is currently unavailable."
   },
   "auth": {
     "login": "Sign In",
     "logout": "Logout",
+    "confirmLogout": "Confirm Logout",
+    "confirmLogoutMessage": "Are you sure you want to logout?",
+    "loggingOut": "Logging out...",
+    "loginWithFaceID": "Login with Face ID",
+    "loginWithBiometric": "Login with %{type}",
+    "biometricNotAvailable": "Biometric authentication is not available",
+    "biometricNotEnrolled": "Please enable Face ID/Touch ID in your device settings",
+    "biometricError": "Biometric authentication failed. Please try again.",
+    "biometricCancelled": "Authentication was cancelled",
     "register": "Sign Up",
     "email": "Email",
     "password": "Password",
@@ -39,12 +50,20 @@
     "confirmPassword": "Confirm Password",
     "phoneNumber": "Phone Number",
     "phoneNumberOptional": "Phone Number (Optional)",
+    "dateOfBirth": "Date of Birth",
+    "selectDate": "Select your date of birth",
+    "gender": "Gender",
+    "selectGender": "Select Gender",
+    "town": "Town/City",
+    "address": "Address",
     "enterEmail": "Enter your email",
     "enterPassword": "Enter your password",
     "confirmYourPassword": "Confirm your password",
     "enterFirstName": "John",
     "enterLastName": "Doe",
     "enterPhoneNumber": "+1 234 567 8900",
+    "enterTown": "Toronto",
+    "enterAddress": "123 Main Street",
     "termsAgreement": "By creating an account, you agree to our Terms of Service and Privacy Policy",
     "signIn": "Sign In",
     "signUp": "Sign Up",
@@ -58,7 +77,20 @@
     "passwordResetInstructions": "Click the link in the email to reset your password. If you don't see it, check your spam folder.",
     "checkEmail": "Check Email",
     "backToLogin": "Back to Login",
-    "resendEmail": "Resend Email"
+    "resendEmail": "Resend Email",
+    "emailNotVerified": "Email Not Verified",
+    "mustVerifyEmailToUseApp": "You must verify your email address to use the app. We've sent a verification email to your inbox.",
+    "pleaseVerifyEmailToAccess": "Please verify your email to access all features and enable two-factor authentication.",
+    "checkInboxForVerification": "Check your inbox and click the verification link. Don't forget to check your spam folder.",
+    "resendVerificationEmail": "Resend Verification Email",
+    "sendingVerificationEmail": "Sending...",
+    "verificationEmailSent": "Verification email sent! Please check your inbox.",
+    "verificationEmailFailed": "Failed to send verification email. Please try again.",
+    "verifyLater": "I'll Verify Later",
+    "emailVerificationRequired": "Email verification is required to continue using the app.",
+    "pleaseWaitBeforeResending": "Please wait {{seconds}} seconds before requesting another email.",
+    "emailMustBeVerifiedFor2FA": "Your email must be verified before you can enable two-factor authentication.",
+    "verifyEmailFirst": "Please verify your email address first."
   },
   "dashboard": {
     "title": "Dashboard",
@@ -199,7 +231,16 @@
     "agency": "Agency",
     "nextPayment": "Next payment",
     "paymentDate": "Payment date",
-    "startClaim": "START A CLAIM"
+    "startClaim": "START A CLAIM",
+    "renewal": {
+      "title": "Renew Policy",
+      "confirmTitle": "Renew Policy",
+      "confirmMessage": "Are you sure you want to renew your %{type} policy?",
+      "renew": "Renew",
+      "expired": "Your policy has expired. Renew now to maintain coverage.",
+      "expiresSoon": "Your policy expires in %{days} days. Renew now to avoid lapse in coverage.",
+      "expiresIn": "Your policy expires in %{days} days. Consider renewing early."
+    }
   },
   "claims": {
     "title": "Claims",
@@ -353,8 +394,11 @@
     "phoneNumber": "Phone Number",
     "address": "Address",
     "dateOfBirth": "Date of Birth",
+    "gender": "Gender",
     "userId": "User ID",
     "status": "Status",
+    "verified": "Verified",
+    "notVerified": "Not Verified",
     "active": "Active",
     "saveChanges": "Save Changes",
     "cancel": "Cancel",
@@ -442,7 +486,8 @@
       "myProfile": "My Profile",
       "settings": "Settings",
       "giveFeedback": "Give Feedback",
-      "privacySecurity": "Privacy, Security & Legal"
+      "privacySecurity": "Privacy, Security & Legal",
+      "chat": "Chat Support"
     }
   },
   "errors": {

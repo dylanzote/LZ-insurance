@@ -6,6 +6,7 @@ import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AlertCircle,
@@ -93,6 +94,7 @@ export const QuoteDetailScreen: React.FC = () => {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [converting, setConverting] = useState(false);
+  const { formatCurrency, formatNumber } = useFormatting();
 
   useEffect(() => {
     loadQuote();
@@ -236,7 +238,7 @@ export const QuoteDetailScreen: React.FC = () => {
   const renderHomeDetails = (details: any) => (
     <>
       {renderDetailRow(t('quotes.form.propertyType'), details.propertyType, (val) => t(`quotes.form.property.${val}`))}
-      {renderDetailRow(t('quotes.form.propertyValue'), details.propertyValue, (val) => `$${val.toLocaleString()}`)}
+      {renderDetailRow(t('quotes.form.propertyValue'), (val) => formatCurrency(val))}
       {renderDetailRow(t('quotes.form.squareFootage'), details.squareFootage)}
       {renderDetailRow(t('quotes.form.yearBuilt'), details.yearBuilt)}
       {renderDetailRow(t('quotes.form.numberOfStories'), details.numberOfStories)}
@@ -256,13 +258,13 @@ export const QuoteDetailScreen: React.FC = () => {
           </Text>
         </View>
       )}
-      {renderDetailRow(t('quotes.form.deductible'), details.deductible, (val) => `$${val.toLocaleString()}`)}
+      {renderDetailRow(t('quotes.form.deductible'), details.deductible, (val) => formatCurrency(val))}
     </>
   );
 
   const renderLifeDetails = (details: any) => (
     <>
-      {renderDetailRow(t('quotes.form.coverageAmount'), details.coverageAmount, (val) => `$${val.toLocaleString()}`)}
+      {renderDetailRow(t('quotes.form.coverageAmount'), details.coverageAmount, (val) => formatCurrency(val))}
       {renderDetailRow(t('quotes.form.policyType'), details.policyType, (val) => t(`quotes.form.policy.${val}`))}
       {renderDetailRow(t('quotes.form.termLength'), details.termLength, (val) => `${val} years`)}
       {renderDetailRow(t('quotes.form.beneficiaries'), details.beneficiaries)}
@@ -388,7 +390,7 @@ export const QuoteDetailScreen: React.FC = () => {
                 {t('quotes.monthlyPremium')}
               </Text>
               <Text variant="h2" weight="bold" color={theme.colors.primary}>
-                ${quote.monthlyPremium.toFixed(2)}
+                {formatCurrency(quote.monthlyPremium)}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -396,7 +398,7 @@ export const QuoteDetailScreen: React.FC = () => {
                 {t('quotes.annualPremium')}
               </Text>
               <Text variant="h3" weight="semibold">
-                ${quote.annualPremium.toFixed(2)}
+                {formatCurrency(quote.annualPremium)}
               </Text>
             </View>
           </View>
@@ -464,7 +466,7 @@ export const QuoteDetailScreen: React.FC = () => {
                 {t('quotes.detail.coverageAmount')}
               </Text>
               <Text variant="body" weight="semibold">
-                ${quote.coverageAmount.toLocaleString()}
+                {formatCurrency(quote.coverageAmount)}
               </Text>
             </View>
           )}
@@ -474,7 +476,7 @@ export const QuoteDetailScreen: React.FC = () => {
                 {t('quotes.detail.deductible')}
               </Text>
               <Text variant="body" weight="semibold">
-                ${quote.deductible.toLocaleString()}
+                {formatCurrency(quote.deductible)}
               </Text>
             </View>
           )}

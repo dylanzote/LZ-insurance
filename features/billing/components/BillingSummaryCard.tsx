@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import type { BillingSummary } from '../types';
 
 interface BillingSummaryCardProps {
@@ -89,25 +90,8 @@ const useStyles = createThemedStyles((theme) => ({
 
 export const BillingSummaryCard: React.FC<BillingSummaryCardProps> = ({ summary }) => {
   const styles = useStyles();
-  const { t, locale } = useTranslation();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const formatLocale = locale === 'fr' ? 'fr-FR' : 'en-US';
-    return date.toLocaleDateString(formatLocale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const { t } = useTranslation();
+  const { formatCurrency, formatDate } = useFormatting();
 
   return (
     <Card variant="elevated" style={styles.card}>
@@ -154,7 +138,7 @@ export const BillingSummaryCard: React.FC<BillingSummaryCardProps> = ({ summary 
               {t('billing.summary.nextPayment')}
             </Text>
             <Text variant="body" weight="semibold" style={styles.nextPaymentValue}>
-              {formatCurrency(summary.nextPaymentAmount)} {t('billing.on')} {formatDate(summary.nextPaymentDate)}
+              {formatCurrency(summary.nextPaymentAmount)} {t('billing.on')} {formatDate(summary.nextPaymentDate, { format: 'short' })}
             </Text>
           </View>
         </View>

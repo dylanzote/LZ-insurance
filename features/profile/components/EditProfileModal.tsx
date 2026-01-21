@@ -4,6 +4,7 @@ import { FormInput } from '@/components/ui/FormInput';
 import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
+import type { UserResponse } from '@/core/types/backend';
 import { profileUpdateSchema, type ProfileUpdateFormData } from '@/core/utils/validation';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -11,13 +12,12 @@ import { profileAPI } from '@/services/api/endpoints';
 import { X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
-import type { UserProfile } from '../types';
 
 interface EditProfileModalProps {
   visible: boolean;
   onClose: () => void;
-  profile: UserProfile | null;
-  onUpdate: (updatedProfile: UserProfile) => void;
+  profile: UserResponse | null;
+  onUpdate: (updatedProfile: UserResponse) => void;
 }
 
 const useStyles = createThemedStyles((theme) => ({
@@ -86,7 +86,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const { theme } = useTheme();
   const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [maritalStatus, setMaritalStatus] = useState<string>('');
   const [gender, setGender] = useState<string>('');
 
   const {
@@ -104,12 +103,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     if (profile && visible) {
       setValue('firstName', profile.firstName || '');
       setValue('lastName', profile.lastName || '');
-      setValue('phoneNumber', profile.phone || '');
+      setValue('phoneNumber', profile.phoneNumber || '');
       setValue('address', profile.address || '');
       setValue('dateOfBirth', profile.dateOfBirth || '');
-      setValue('maritalStatus', profile.maritalStatus || '');
       setValue('gender', profile.gender || '');
-      setMaritalStatus(profile.maritalStatus || '');
       setGender(profile.gender || '');
     }
   }, [profile, visible, setValue]);
@@ -123,21 +120,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     // Log form data and validation state
     console.log('Form submitted with data:', data);
     console.log('Form errors:', errors);
-    console.log('Marital status state:', maritalStatus);
     console.log('Gender state:', gender);
 
     try {
       setIsSubmitting(true);
       
-      // Prepare update data with all fields
+      // Prepare update data matching backend UpdateUserRequest
       const updateData = {
+        id: profile!.id,
         firstName: data.firstName?.trim() || '',
         lastName: data.lastName?.trim() || '',
         phoneNumber: data.phoneNumber?.trim() || '',
         address: data.address?.trim() || '',
         dateOfBirth: data.dateOfBirth || '',
-        maritalStatus: maritalStatus || data.maritalStatus || '',
         gender: gender || data.gender || '',
+        email: profile!.email,
+        town: profile!.town || '',
+        roleIds: profile!.roles?.map(r => r.id) || [],
       };
 
       console.log('Calling profileAPI.updateProfile with:', updateData);
@@ -146,20 +145,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       console.log('Profile update response received:', updatedProfile);
 
-      // Update profile with returned data
-      const updatedProfileData: UserProfile = {
-        ...profile,
-        firstName: updatedProfile.data.firstName || profile.firstName,
-        lastName: updatedProfile.data.lastName || profile.lastName,
-        phone: updatedProfile.data.phoneNumber || updatedProfile.data.phone || profile.phone,
-        address: updatedProfile.data.address || profile.address,
-        dateOfBirth: updatedProfile.data.dateOfBirth || profile.dateOfBirth,
-        maritalStatus: updatedProfile.data.maritalStatus || maritalStatus || profile.maritalStatus,
-        gender: updatedProfile.data.gender || gender || profile.gender,
-      };
-
-      console.log('Updating profile with:', updatedProfileData);
-      onUpdate(updatedProfileData);
+      // Pass updated profile back
+      onUpdate(updatedProfile.data);
 
       // Close modal and show success
       Alert.alert(
@@ -285,75 +272,43 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 error={errors.dateOfBirth}
               />
 
-              {/* Marital Status */}
-              <View style={{ marginBottom: 16 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 8 }}>
-                  {t('quotes.form.maritalStatus')}
-                </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
-                  {['single', 'married', 'divorced', 'widowed'].map((status) => (
-                    <TouchableOpacity
-                      key={status}
-                      style={{ width: '48%', margin: '1%', marginHorizontal: 6, marginBottom: 12 }}
-                      onPress={() => {
-                        setMaritalStatus(status);
-                        setValue('maritalStatus', status);
-                      }}
-                    >
-                      <Card
-                        variant="elevated"
-                        style={{
-                          padding: 12,
-                          alignItems: 'center',
-                          borderWidth: maritalStatus === status ? 2 : 0,
-                          borderColor: maritalStatus === status ? theme.colors.primary : 'transparent',
-                          backgroundColor: maritalStatus === status ? theme.colors.primaryLight + '20' : theme.colors.card,
-                        }}
-                      >
-                        <Text
-                          variant="body"
-                          weight={maritalStatus === status ? 'semibold' : 'regular'}
-                          color={maritalStatus === status ? theme.colors.primary : theme.colors.text}
-                        >
-                          {t(`quotes.form.marital.${status}`)}
-                        </Text>
-                      </Card>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
               {/* Gender */}
               <View style={{ marginBottom: 16 }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.text, marginBottom: 8 }}>
-                  {t('quotes.form.gender')}
+                  {t('profile.gender')}
                 </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
-                  {['male', 'female', 'other', 'prefer-not-to-say'].map((g) => (
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  {[
+                    { value: 'MALE', label: 'Male', icon: '👨' },
+                    { value: 'FEMALE', label: 'Female', icon: '👩' },
+                    { value: 'OTHER', label: 'Other', icon: '⚧' }
+                  ].map((g) => (
                     <TouchableOpacity
-                      key={g}
-                      style={{ width: '48%', margin: '1%', marginHorizontal: 6, marginBottom: 12 }}
+                      key={g.value}
+                      style={{ flex: 1 }}
                       onPress={() => {
-                        setGender(g);
-                        setValue('gender', g);
+                        setGender(g.value);
+                        setValue('gender', g.value);
                       }}
                     >
                       <Card
                         variant="elevated"
                         style={{
-                          padding: 12,
+                          padding: 16,
                           alignItems: 'center',
-                          borderWidth: gender === g ? 2 : 0,
-                          borderColor: gender === g ? theme.colors.primary : 'transparent',
-                          backgroundColor: gender === g ? theme.colors.primaryLight + '20' : theme.colors.card,
+                          gap: 8,
+                          borderWidth: gender === g.value ? 2 : 1,
+                          borderColor: gender === g.value ? theme.colors.primary : theme.colors.border,
+                          backgroundColor: gender === g.value ? theme.colors.primary + '15' : theme.colors.card,
                         }}
                       >
+                        <Text style={{ fontSize: 24 }}>{g.icon}</Text>
                         <Text
                           variant="body"
-                          weight={gender === g ? 'semibold' : 'regular'}
-                          color={gender === g ? theme.colors.primary : theme.colors.text}
+                          weight={gender === g.value ? 'semibold' : 'regular'}
+                          color={gender === g.value ? theme.colors.primary : theme.colors.text}
                         >
-                          {t(`quotes.form.genderOptions.${g}`)}
+                          {g.label}
                         </Text>
                       </Card>
                     </TouchableOpacity>

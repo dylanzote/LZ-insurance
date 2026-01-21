@@ -3,10 +3,18 @@
 export const APP_CONFIG = {
   name: 'LZ-Insurance',
   version: '1.0.0',
-  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://api.lz-insurance.com/v1',
-  apiTimeout: 10000, // 10 seconds
+  // User Service API (port 8081)
+  // IMPORTANT: Update .env.development file with correct IP for your device type
+  // - Android Emulator: http://10.0.2.2:8081
+  // - Physical Device: http://YOUR_COMPUTER_IP:8081
+  // - iOS Simulator: http://localhost:8081
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://10.0.0.251:8081', // Default to physical device IP
+  apiTimeout: 15000, // 15 seconds
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
+  
+  // Notification Service API (port 8086)
+  notificationApiUrl: process.env.EXPO_PUBLIC_NOTIFICATION_API_URL || 'http://10.0.0.251:8086',
 } as const;
 
 export const STORAGE_KEYS = {

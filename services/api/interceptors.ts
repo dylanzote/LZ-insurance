@@ -1,6 +1,6 @@
-import { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { useAuthStore } from '@/core/store/useAuthStore';
 import { ApiError } from '@/core/types';
+import { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 export const setupInterceptors = (instance: AxiosInstance) => {
   // Request interceptor to add auth token and handle request
@@ -32,6 +32,30 @@ export const setupInterceptors = (instance: AxiosInstance) => {
       if (__DEV__) {
         console.log(`[API] ${response.config.method?.toUpperCase()} ${response.config.url} - Success`);
       }
+      
+      // CRITICAL: Check if response indicates an error (backend may return 200 OK with error in body)
+      // Backend can return: { "StatusCode": 400, "message": "error message" } even with HTTP 200
+      const responseData = response.data;
+      const statusCode = responseData?.StatusCode || responseData?.statusCode;
+      
+      if (statusCode && statusCode >= 400) {
+        const errorMessage = responseData.message || 
+                            responseData.error || 
+                            `Error: ${statusCode}`;
+        
+        if (__DEV__) {
+          console.error(`[API] Backend returned error in 200 response:`, responseData);
+        }
+        
+        // Handle 401 errors (invalid credentials, token expired) - logout user
+        if (statusCode === 401) {
+          useAuthStore.getState().logout();
+        }
+        
+        // Throw simple Error with just the message
+        return Promise.reject(new Error(errorMessage));
+      }
+      
       return response;
     },
     async (error: AxiosError<ApiError>) => {

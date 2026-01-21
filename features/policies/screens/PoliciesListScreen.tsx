@@ -153,11 +153,11 @@ export const PoliciesListScreen: React.FC<PoliciesListScreenProps> = ({ typeFilt
   };
 
   const handleManagePolicies = () => {
-    router.push('/policies/viewPolicies' as any);
+    router.push('/(app)/policies/viewPolicies' as any);
   };
 
   const handleManageBilling = () => {
-    router.push('/billing' as any);
+    router.push('/(app)/billing' as any);
   };
 
   // Get title based on type filter

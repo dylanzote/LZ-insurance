@@ -6,6 +6,7 @@ import { Text } from '@/components/ui/Text';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AlertCircle,
@@ -203,13 +204,14 @@ const useStyles = createThemedStyles((theme) => ({
 
 export const ClaimDetailScreen: React.FC = () => {
   const styles = useStyles();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { claims, loading, refetch } = useClaims();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const { formatCurrency, formatDate, formatDateTime } = useFormatting();
 
   const claim = claims.find((c: Claim) => c.id === id);
 
@@ -217,26 +219,6 @@ export const ClaimDetailScreen: React.FC = () => {
     setRefreshing(true);
     await refetch();
     setRefreshing(false);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   const getStatusColor = (status: ClaimStatus): string => {
@@ -382,7 +364,7 @@ export const ClaimDetailScreen: React.FC = () => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.infoLabel}>{t('claims.details.amount')}</Text>
                 <Text style={styles.infoValue}>
-                  ${claim.amount.toLocaleString()}
+                  {formatCurrency(claim.amount)}
                 </Text>
               </View>
             </View>

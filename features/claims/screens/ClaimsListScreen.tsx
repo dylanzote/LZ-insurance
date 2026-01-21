@@ -26,6 +26,7 @@ const useStyles = createThemedStyles((theme) => ({
   } as const,
   headerSection: {
     marginBottom: 24,
+    paddingTop: 8,
   } as const,
   headerCard: {
     padding: 20,
@@ -38,6 +39,7 @@ const useStyles = createThemedStyles((theme) => ({
     marginBottom: 8,
     flexWrap: 'wrap' as const,
     flexShrink: 1,
+    lineHeight: 36,
   } as const,
   headerSubtitle: {
     fontSize: 15,
@@ -132,7 +134,7 @@ export const ClaimsListScreen: React.FC = () => {
   };
 
   const handleNewClaim = () => {
-    router.push('/claims/new');
+    router.push('/(app)/claims/new');
   };
 
   const handleRefresh = async () => {

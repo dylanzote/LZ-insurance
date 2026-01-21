@@ -95,15 +95,15 @@ export const BillingListScreen: React.FC<BillingListScreenProps> = ({ policyId }
   }, [invoices, filter]);
 
   const handleInvoicePress = (invoice: any) => {
-    router.push(`/billing/${invoice.id}` as any);
+    router.push(`/(app)/billing/${invoice.id}` as any);
   };
 
   const handleManagePaymentMethods = () => {
-    router.push('/billing/payment-methods' as any);
+    router.push('/(app)/billing/payment-methods' as any);
   };
 
   const handleAddPaymentMethod = () => {
-    router.push('/billing/payment-methods?add=true' as any);
+    router.push('/(app)/billing/payment-methods?add=true' as any);
   };
 
   if (loading && !invoices.length) {

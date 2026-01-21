@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter, Link } from 'expo-router';
-import { createThemedStyles } from '@/core/theme/createThemedStyles';
-import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/Button';
-import { FormInput } from '@/components/ui/FormInput';
 import { Card } from '@/components/ui/Card';
+import { DatePickerInput } from '@/components/ui/DatePickerInput';
+import { FormInput } from '@/components/ui/FormInput';
+import { GenderSelector } from '@/components/ui/GenderSelector';
 import { Text } from '@/components/ui/Text';
-import { useFormValidation } from '@/hooks/useFormValidation';
-import { registerSchema, RegisterFormData } from '@/core/utils/validation';
 import { useAuth } from '@/contexts/AuthContext';
+import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTheme } from '@/core/theme/useTheme';
+import { RegisterFormData, registerSchema } from '@/core/utils/validation';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Link, useRouter } from 'expo-router';
 import { Shield } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const useStyles = createThemedStyles((theme) => ({
   container: {
@@ -85,6 +88,8 @@ const useStyles = createThemedStyles((theme) => ({
   footer: {
     marginTop: theme.spacing.xl,
     alignItems: 'center' as const,
+    // Add extra bottom padding - will be supplemented by safe area insets
+    paddingBottom: theme.spacing.lg,
   } as const,
   footerRow: {
     flexDirection: 'row' as const,
@@ -105,7 +110,8 @@ export const RegisterScreen: React.FC = () => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const router = useRouter();
-  const { login } = useAuth();
+  const { register } = useAuth();
+  const insets = useSafeAreaInsets(); // FIX: Add missing hook call
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,26 +128,50 @@ export const RegisterScreen: React.FC = () => {
       password: '',
       confirmPassword: '',
       phoneNumber: '',
+      dateOfBirth: '',
+      gender: 'MALE' as any,
+      town: '',
+      address: '',
     },
   });
+
+  /**
+   * Format date from YYYY-MM-DD to dd/MM/yyyy (backend requirement)
+   */
+  const formatDateForBackend = (dateString: string): string => {
+    if (!dateString) return '';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Simulate registration API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Prepare user data for backend (matching CreateUserRequest)
+      const userData = {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        userName: data.email.split('@')[0], // Generate username from email
+        gender: data.gender,
+        email: data.email.trim().toLowerCase(),
+        phoneNumber: data.phoneNumber.trim(),
+        dateOfBirth: formatDateForBackend(data.dateOfBirth), // Convert to dd/MM/yyyy
+        town: data.town.trim(),
+        address: data.address.trim(),
+        password: data.password,
+        language: 'EN' as const, // Default language
+      };
 
-      // After successful registration, automatically log in the user
-      // In a real app, you might want to verify email first
-      await login(data.email, data.password);
+      // Call register API - this will automatically log in the user
+      await register(userData);
       
       // Navigation will happen automatically via the auth context
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? err.message 
-        : t('errors.generic');
+        : t('errors.registrationFailed');
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -151,12 +181,17 @@ export const RegisterScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.keyboardView}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: Math.max(insets.bottom, 16) + 16, // Safe area + extra padding
+          }
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -228,12 +263,51 @@ export const RegisterScreen: React.FC = () => {
             <FormInput
               control={control}
               name="phoneNumber"
-              label={t('auth.phoneNumberOptional')}
-              placeholder={t('auth.enterPhoneNumber')}
+              label={t('auth.phoneNumber')}
+              placeholder="+1234567890"
               style={styles.input}
               keyboardType="phone-pad"
               autoComplete="tel"
               error={errors.phoneNumber}
+            />
+
+            <DatePickerInput
+              control={control}
+              name="dateOfBirth"
+              label={t('auth.dateOfBirth')}
+              placeholder={t('auth.selectDate') || 'Select your date of birth'}
+              style={styles.input}
+              error={errors.dateOfBirth}
+            />
+
+            <GenderSelector
+              control={control}
+              name="gender"
+              label={t('auth.gender')}
+              style={styles.input}
+              error={errors.gender}
+            />
+
+            <FormInput
+              control={control}
+              name="town"
+              label={t('auth.town')}
+              placeholder={t('auth.enterTown')}
+              style={styles.input}
+              autoCapitalize="words"
+              error={errors.town}
+            />
+
+            <FormInput
+              control={control}
+              name="address"
+              label={t('auth.address')}
+              placeholder={t('auth.enterAddress')}
+              style={styles.input}
+              autoCapitalize="words"
+              multiline
+              numberOfLines={2}
+              error={errors.address}
             />
 
             <FormInput

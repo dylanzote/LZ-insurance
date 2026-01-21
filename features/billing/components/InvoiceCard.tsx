@@ -6,6 +6,7 @@ import { Text } from '@/components/ui/Text';
 import { Badge } from '@/components/ui/Badge';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useFormatting } from '@/hooks/useFormatting';
 import type { Invoice } from '../types';
 
 interface InvoiceCardProps {
@@ -103,25 +104,9 @@ const getStatusVariant = (status: Invoice['status']): 'success' | 'warning' | 'e
 
 export const InvoiceCard: React.FC<InvoiceCardProps> = ({ invoice, onPress }) => {
   const styles = useStyles();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const { theme } = useStyles();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(locale === 'fr' ? 'fr-CA' : 'en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const formatLocale = locale === 'fr' ? 'fr-FR' : 'en-US';
-    return date.toLocaleDateString(formatLocale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const { formatCurrency, formatDate } = useFormatting();
 
   return (
     <Card variant="elevated" style={styles.card}>
@@ -157,7 +142,7 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({ invoice, onPress }) =>
           <View style={styles.detailItem}>
             <Calendar size={14} color={styles.detailText.color} style={styles.detailIcon} />
             <Text variant="caption" style={styles.detailText}>
-              {t('billing.dueDate')}: {formatDate(invoice.dueDate)}
+              {t('billing.dueDate')}: {formatDate(invoice.dueDate, { format: 'short' })}
             </Text>
           </View>
         </View>

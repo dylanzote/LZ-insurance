@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/Button';
 import { FormInput } from '@/components/ui/FormInput';
 import { Text } from '@/components/ui/Text';
+import { useAuth } from '@/contexts/AuthContext';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
 import { changePasswordSchema, type ChangePasswordFormData } from '@/core/utils/validation';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useTranslation } from '@/hooks/useTranslation';
-import { profileAPI } from '@/services/api/endpoints';
+import { userProfileAPI } from '@/services/api/endpoints';
 import { Eye, EyeOff, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, TouchableOpacity, View } from 'react-native';
@@ -75,6 +76,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 }) => {
   const styles = useStyles();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -92,10 +94,17 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const onSubmit = async (data: ChangePasswordFormData) => {
     try {
       setIsSubmitting(true);
-      await profileAPI.changePassword({
-        currentPassword: data.currentPassword,
+      
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Call real API for password change
+      await userProfileAPI.changePassword({
+        userId: user.id,
+        oldPassword: data.currentPassword,
         newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword,
+        // Include 2FA code if required (handled separately in UI)
       });
 
       Alert.alert(

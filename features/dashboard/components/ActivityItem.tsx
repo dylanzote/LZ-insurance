@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { createThemedStyles } from '@/core/theme/createThemedStyles';
+import { useTheme } from '@/core/theme/useTheme';
+import { useFormatting } from '@/hooks/useFormatting';
 import { RecentActivity } from '../types';
 
 interface ActivityItemProps {
@@ -38,13 +40,15 @@ const useStyles = createThemedStyles((theme) => ({
 
 export const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
   const styles = useStyles();
+  const { theme } = useTheme();
+  const { formatCurrency } = useFormatting();
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'policy': return '#10b981';
-      case 'claim': return '#f59e0b';
-      case 'payment': return '#3b82f6';
-      default: return '#6b7280';
+      case 'policy': return theme.colors.success;
+      case 'claim': return theme.colors.warning;
+      case 'payment': return theme.colors.info;
+      default: return theme.colors.textSecondary;
     }
   };
 
@@ -56,7 +60,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
       </View>
       {activity.amount && (
         <Text style={styles.amount}>
-          ${activity.amount}
+          {formatCurrency(activity.amount)}
         </Text>
       )}
     </View>
